@@ -14,9 +14,21 @@
   <!-- Header -->
   <header>
     <div class="container">
-      <h1>Method & Passion</h1>
-      <p>Alojamento Local de Confiança</p>
-      <div class="trust-badge">Reserva Segura e Certificada</div>
+      <div class="header-top">
+        <div class="language-selector">
+          <label for="languageSelect">🌍</label>
+          <select id="languageSelect">
+            <option value="pt">Português</option>
+            <option value="en">English</option>
+            <option value="fr">Français</option>
+            <option value="de">Deutsch</option>
+            <option value="es">Español</option>
+          </select>
+        </div>
+      </div>
+      <h1 data-i18n="title">Method & Passion</h1>
+      <p data-i18n="subtitle">Alojamento Local de Confiança</p>
+      <div class="trust-badge" data-i18n="trustBadge">Reserva Segura e Certificada</div>
     </div>
   </header>
 
@@ -24,7 +36,7 @@
   <main class="container">
     <!-- Accommodation Selection -->
     <section>
-      <h2>Escolha o Seu Alojamento</h2>
+      <h2 data-i18n="chooseAccommodation">Escolha o Seu Alojamento</h2>
       <div class="accommodations">
         <!-- Esperança Terrace -->
         <div class="accommodation-card" data-accommodation="Esperança Terrace">
@@ -33,11 +45,11 @@
           </div>
           <div class="accommodation-content">
             <h3>Esperança Terrace</h3>
-            <p>Um refúgio tranquilo com vistas deslumbrantes e todas as comodidades para uma estadia inesquecível.</p>
+            <p data-i18n="esperancaDesc">Um refúgio tranquilo com vistas deslumbrantes e todas as comodidades para uma estadia inesquecível.</p>
             <div class="accommodation-features">
-              <span class="feature">Wi-Fi Grátis</span>
-              <span class="feature">Vista Panorâmica</span>
-              <span class="feature">Terraço Privado</span>
+              <span class="feature" data-i18n="wifiFree">Wi-Fi Grátis</span>
+              <span class="feature" data-i18n="panoramicView">Vista Panorâmica</span>
+              <span class="feature" data-i18n="privateTerrace">Terraço Privado</span>
             </div>
           </div>
         </div>
@@ -49,11 +61,11 @@
           </div>
           <div class="accommodation-content">
             <h3>Nattura Gerês Village</h3>
-            <p>Em plena natureza do Gerês, perfeito para quem procura paz, natureza e conforto excepcional.</p>
+            <p data-i18n="natturaDesc">Em plena natureza do Gerês, perfeito para quem procura paz, natureza e conforto excepcional.</p>
             <div class="accommodation-features">
-              <span class="feature">Natureza Envolvente</span>
-              <span class="feature">Conforto Total</span>
-              <span class="feature">Parque Natural</span>
+              <span class="feature" data-i18n="natureView">Natureza Envolvente</span>
+              <span class="feature" data-i18n="totalComfort">Conforto Total</span>
+              <span class="feature" data-i18n="naturalPark">Parque Natural</span>
             </div>
           </div>
         </div>
@@ -62,14 +74,14 @@
 
     <!-- Booking Form -->
     <section class="booking-section">
-      <h2>Faça a Sua Reserva</h2>
+      <h2 data-i18n="makeReservation">Faça a Sua Reserva</h2>
       <form id="bookingForm" class="booking-form">
         
         <!-- Check-in and Check-out Dates -->
         <div class="date-inputs">
           <div class="form-group">
             <label for="checkin">
-              <span>📅 Data de Check-in</span>
+              <span>📅 <span data-i18n="checkin">Data de Check-in</span></span>
               <span class="required">*</span>
             </label>
             <input type="date" id="checkin" required>
@@ -77,7 +89,7 @@
 
           <div class="form-group">
             <label for="checkout">
-              <span>📅 Data de Check-out</span>
+              <span>📅 <span data-i18n="checkout">Data de Check-out</span></span>
               <span class="required">*</span>
             </label>
             <input type="date" id="checkout" required>
@@ -87,28 +99,39 @@
         <!-- Number of Guests -->
         <div class="form-group">
           <label for="guests">
-            <span>👥 Número de Hóspedes</span>
+            <span>👥 <span data-i18n="guests">Número de Hóspedes</span></span>
             <span class="required">*</span>
           </label>
-          <input type="number" id="guests" min="1" max="20" placeholder="Ex: 2" required>
+          <input type="number" id="guests" min="1" max="20" data-i18n="guestsPlaceholder" placeholder="Ex: 2" required>
+        </div>
+
+        <!-- Nationality -->
+        <div class="form-group">
+          <label for="nationality">
+            <span>🌍 <span data-i18n="nationality">Nacionalidade</span></span>
+            <span class="required">*</span>
+          </label>
+          <select id="nationality" required>
+            <option value="" data-i18n="nationalityPlaceholder">Selecione a nacionalidade</option>
+          </select>
         </div>
 
         <!-- Guest Names -->
         <div class="form-group">
           <label for="primaryName">
-            <span>👤 Nome do Responsável</span>
+            <span>👤 <span data-i18n="responsibleName">Nome do Responsável</span></span>
             <span class="required">*</span>
           </label>
           <div id="namesContainer" class="names-section">
             <div class="name-input-wrapper">
-              <input type="text" id="primaryName" placeholder="Nome completo do responsável pela reserva" required>
+              <input type="text" id="primaryName" data-i18n="namePlaceholder" placeholder="Nome completo do responsável pela reserva" required>
             </div>
           </div>
-          <button type="button" id="addName" class="btn-add-name">Adicionar mais nomes</button>
+          <button type="button" id="addName" class="btn-add-name" data-i18n="addMoreNames">Adicionar mais nomes</button>
         </div>
 
         <!-- Submit Button -->
-        <button type="submit" class="btn-submit">
+        <button type="submit" class="btn-submit" data-i18n="bookWhatsapp">
           Reservar via WhatsApp
         </button>
       </form>
@@ -118,7 +141,7 @@
   <!-- Footer -->
   <footer>
     <div class="container">
-      <p>&copy; 2026 Method & Passion - Alojamento Local. Todos os direitos reservados.</p>
+      <p data-i18n="footer">&copy; 2026 Method & Passion - Alojamento Local. Todos os direitos reservados.</p>
     </div>
   </footer>
 
