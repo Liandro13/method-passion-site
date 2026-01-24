@@ -68,14 +68,21 @@ async function getBookedDates(accessToken, driveId, itemId) {
   // Estrutura: Coluna A (Mês), B (Data Check-In), C (Data check-out), D (Noites), E (Guest), F (Lingua)
   const bookedDates = [];
   
+  console.log('Excel rows:', rows.length);
+  console.log('First 5 rows:', JSON.stringify(rows.slice(0, 5)));
+  
   for (let i = 1; i < rows.length; i++) { // Skip header row
     const checkIn = rows[i][1];  // Coluna B (Data Check-In)
     const checkOut = rows[i][2]; // Coluna C (Data check-out)
 
-    // Only process if both dates exist
-    if (checkIn && checkOut) {
+    console.log(`Row ${i}: checkIn=${checkIn}, checkOut=${checkOut}`);
+
+    // Only process if both dates exist and are not empty strings
+    if (checkIn && checkOut && checkIn.toString().trim() !== '' && checkOut.toString().trim() !== '') {
       const parsedCheckIn = parseExcelDate(checkIn);
       const parsedCheckOut = parseExcelDate(checkOut);
+      
+      console.log(`Parsed: ${parsedCheckIn} to ${parsedCheckOut}`);
       
       if (parsedCheckIn && parsedCheckOut) {
         bookedDates.push({
@@ -86,6 +93,7 @@ async function getBookedDates(accessToken, driveId, itemId) {
     }
   }
 
+  console.log('Total booked dates found:', bookedDates.length);
   return bookedDates;
 }
 
