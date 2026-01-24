@@ -46,6 +46,9 @@ const translations = {
         selectGuests: 'Por favor, indique o número de hóspedes.',
         selectNationality: 'Por favor, selecione a nacionalidade.',
         enterName: 'Por favor, indique o nome do responsável.',
+        checkingAvailability: 'A verificar disponibilidade...',
+        datesNotAvailable: 'As datas selecionadas não estão disponíveis. Por favor escolha outras datas.',
+        availabilityError: 'Erro ao verificar disponibilidade. Por favor tente novamente.',
         // WhatsApp message
         whatsappGreeting: 'Olá! Gostaria de fazer uma reserva:',
         whatsappAccommodation: 'Alojamento',
@@ -94,6 +97,9 @@ const translations = {
         selectGuests: 'Please indicate the number of guests.',
         selectNationality: 'Please select nationality.',
         enterName: 'Please enter the responsible person name.',
+        checkingAvailability: 'Checking availability...',
+        datesNotAvailable: 'Selected dates are not available. Please choose other dates.',
+        availabilityError: 'Error checking availability. Please try again.',
         whatsappGreeting: 'Hello! I would like to make a reservation:',
         whatsappAccommodation: 'Accommodation',
         whatsappCheckin: 'Check-in',
@@ -141,6 +147,9 @@ const translations = {
         selectGuests: 'Veuillez indiquer le nombre de personnes.',
         selectNationality: 'Veuillez sélectionner la nationalité.',
         enterName: 'Veuillez indiquer le nom du responsable.',
+        checkingAvailability: 'Vérification de la disponibilité...',
+        datesNotAvailable: 'Les dates sélectionnées ne sont pas disponibles. Veuillez choisir d\'autres dates.',
+        availabilityError: 'Erreur lors de la vérification de la disponibilité. Veuillez réessayer.',
         whatsappGreeting: 'Bonjour! Je voudrais faire une réservation:',
         whatsappAccommodation: 'Hébergement',
         whatsappCheckin: 'Arrivée',
@@ -188,6 +197,9 @@ const translations = {
         selectGuests: 'Bitte geben Sie die Anzahl der Gäste an.',
         selectNationality: 'Bitte wählen Sie die Nationalität.',
         enterName: 'Bitte geben Sie den Namen der verantwortlichen Person ein.',
+        checkingAvailability: 'Verfügbarkeit wird geprüft...',
+        datesNotAvailable: 'Die ausgewählten Daten sind nicht verfügbar. Bitte wählen Sie andere Daten.',
+        availabilityError: 'Fehler bei der Überprüfung der Verfügbarkeit. Bitte versuchen Sie es erneut.',
         whatsappGreeting: 'Hallo! Ich möchte eine Reservierung vornehmen:',
         whatsappAccommodation: 'Unterkunft',
         whatsappCheckin: 'Check-in',
@@ -235,6 +247,9 @@ const translations = {
         selectGuests: 'Por favor, indique el número de huéspedes.',
         selectNationality: 'Por favor, seleccione la nacionalidad.',
         enterName: 'Por favor, indique el nombre del responsable.',
+        checkingAvailability: 'Comprobando disponibilidad...',
+        datesNotAvailable: 'Las fechas seleccionadas no están disponibles. Por favor elija otras fechas.',
+        availabilityError: 'Error al verificar la disponibilidad. Por favor inténtelo de nuevo.',
         whatsappGreeting: '¡Hola! Me gustaría hacer una reserva:',
         whatsappAccommodation: 'Alojamiento',
         whatsappCheckin: 'Entrada',
@@ -414,7 +429,7 @@ function initializeDateValidation() {
 function initializeFormSubmission() {
     const form = document.getElementById('bookingForm');
     
-    form.addEventListener('submit', function(e) {
+    form.addEventListener('submit', async function(e) {
         e.preventDefault();
         
         // Validate form
@@ -422,15 +437,72 @@ function initializeFormSubmission() {
             return;
         }
         
-        // Collect form data
-        const formData = collectFormData();
+        // Check availability before proceeding
+        const submitButton = form.querySelector('.btn-submit');
+        const originalText = submitButton.textContent;
+        submitButton.disabled = true;
+        submitButton.textContent = translations[currentLanguage].checkingAvailability;
         
-        // Build WhatsApp message
-        const message = buildWhatsAppMessage(formData);
-        
-        // Redirect to WhatsApp
-        redirectToWhatsApp(message);
+        try {
+            const checkin = document.getElementById('checkin').value;
+            const checkout = document.getElementById('checkout').value;
+            
+            const isAvailable = await checkAvailability(selectedAccommodation, checkin, checkout);
+            
+            if (!isAvailable) {
+                alert(translations[currentLanguage].datesNotAvailable);
+                submitButton.disabled = false;
+                submitButton.textContent = originalText;
+                return;
+            }
+            
+            // Collect form data
+            const formData = collectFormData();
+            
+            // Build WhatsApp message
+            const message = buildWhatsAppMessage(formData);
+            
+            // Redirect to WhatsApp
+            redirectToWhatsApp(message);
+            
+        } catch (error) {
+            console.error('Error checking availability:', error);
+            alert(translations[currentLanguage].availabilityError);
+        } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = originalText;
+        }
     });
+}
+
+// Check availability with backend API
+async function checkAvailability(accommodation, checkIn, checkOut) {
+    try {
+        const response = await fetch('/api/check-availability', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                accommodation,
+                checkIn,
+                checkOut
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('API request failed');
+        }
+        
+        const data = await response.json();
+        return data.available;
+        
+    } catch (error) {
+        console.error('Availability check error:', error);
+        // If API fails, allow booking (fail-open) but log the error
+        // You can change this to fail-closed by returning false
+        return true;
+    }
 }
 
 // Validate all form fields
