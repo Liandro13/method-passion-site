@@ -87,7 +87,9 @@ async function getBookedDates(accessToken, driveId, itemId) {
   }
 
   return bookedDates;
-}, Excel serial number, or date object)
+}
+
+// Parse Excel date (can be string, Excel serial number, or date object)
 function parseExcelDate(value) {
   if (!value) return null;
   
