@@ -47,7 +47,7 @@ async function getAccessToken(env) {
 // Read Excel file and extract booked dates
 async function getBookedDates(accessToken, driveId, itemId) {
   // Get worksheet data
-  const url = `https://graph.microsoft.com/v1.0/drives/${driveId}/items/${itemId}/workbook/worksheets/Sheet1/usedRange`;
+  const url = `https://graph.microsoft.com/v1.0/drives/${driveId}/items/${itemId}/workbook/worksheets/reservas/usedRange`;
   
   const response = await fetch(url, {
     headers: {
