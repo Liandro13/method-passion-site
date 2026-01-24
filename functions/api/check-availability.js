@@ -45,9 +45,11 @@ async function getAccessToken(env) {
 }
 
 // Read Excel file and extract booked dates
-async function getBookedDates(accessToken, driveId, itemId) {
+async function getBookedDates(accessToken, driveId, itemId, debugInfo = { logs: [] }) {
   // Get worksheet data
   const url = `https://graph.microsoft.com/v1.0/drives/${driveId}/items/${itemId}/workbook/worksheets/reservas/usedRange`;
+  
+  debugInfo.logs.push(`Fetching: ${url}`);
   
   const response = await fetch(url, {
     headers: {
@@ -57,7 +59,9 @@ async function getBookedDates(accessToken, driveId, itemId) {
   });
 
   if (!response.ok) {
-    console.error('Failed to read Excel:', await response.text());
+    const errorText = await response.text();
+    debugInfo.logs.push(`Error response: ${response.status} - ${errorText}`);
+    console.error('Failed to read Excel:', errorText);
     return [];
   }
 
@@ -68,21 +72,25 @@ async function getBookedDates(accessToken, driveId, itemId) {
   // Estrutura: Coluna A (Mês), B (Data Check-In), C (Data check-out), D (Noites), E (Guest), F (Lingua)
   const bookedDates = [];
   
-  console.log('Excel rows:', rows.length);
-  console.log('First 5 rows:', JSON.stringify(rows.slice(0, 5)));
+  debugInfo.logs.push(`Excel rows: ${rows.length}`);
+  debugInfo.logs.push(`First 3 rows: ${JSON.stringify(rows.slice(0, 3))}`);
   
   for (let i = 1; i < rows.length; i++) { // Skip header row
     const checkIn = rows[i][1];  // Coluna B (Data Check-In)
     const checkOut = rows[i][2]; // Coluna C (Data check-out)
 
-    console.log(`Row ${i}: checkIn=${checkIn}, checkOut=${checkOut}`);
+    if (i < 5) { // Log first 5 rows for debugging
+      debugInfo.logs.push(`Row ${i}: checkIn=${checkIn}, checkOut=${checkOut}`);
+    }
 
     // Only process if both dates exist and are not empty strings
     if (checkIn && checkOut && checkIn.toString().trim() !== '' && checkOut.toString().trim() !== '') {
       const parsedCheckIn = parseExcelDate(checkIn);
       const parsedCheckOut = parseExcelDate(checkOut);
       
-      console.log(`Parsed: ${parsedCheckIn} to ${parsedCheckOut}`);
+      if (i < 5) {
+        debugInfo.logs.push(`Parsed: ${parsedCheckIn} to ${parsedCheckOut}`);
+      }
       
       if (parsedCheckIn && parsedCheckOut) {
         bookedDates.push({
@@ -93,7 +101,7 @@ async function getBookedDates(accessToken, driveId, itemId) {
     }
   }
 
-  console.log('Total booked dates found:', bookedDates.length);
+  debugInfo.logs.push(`Total booked dates found: ${bookedDates.length}`);
   return bookedDates;
 }
 
@@ -204,7 +212,8 @@ export async function onRequest(context) {
     const accessToken = await getAccessToken(context.env);
 
     // Get booked dates from Excel
-    const bookedDates = await getBookedDates(accessToken, excelFile.driveId, excelFile.itemId);
+    const debugInfo = { logs: [] };
+    const bookedDates = await getBookedDates(accessToken, excelFile.driveId, excelFile.itemId, debugInfo);
 
     // Check availability
     const result = checkAvailability(checkIn, checkOut, bookedDates);
@@ -214,7 +223,8 @@ export async function onRequest(context) {
       checkIn,
       checkOut,
       ...result,
-      bookedDates: bookedDates.map(d => ({ checkIn: d.checkIn, checkOut: d.checkOut }))
+      bookedDates: bookedDates.map(d => ({ checkIn: d.checkIn, checkOut: d.checkOut })),
+      debug: debugInfo.logs // Return debug info
     }), {
       status: 200,
       headers: corsHeaders
