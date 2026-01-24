@@ -140,6 +140,7 @@ h2 {
     font-size: 2rem;
     color: var(--text-dark);
     margin-bottom: 30px;
+    margin-top: 10px;
     text-align: center;
     font-weight: 600;
 }
@@ -175,20 +176,23 @@ h2 {
 .accommodation-image {
     width: 100%;
     height: 220px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--bg-light);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 4rem;
     position: relative;
+    overflow: hidden;
 }
 
-.accommodation-card:nth-child(1) .accommodation-image {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+.accommodation-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: var(--transition);
 }
 
-.accommodation-card:nth-child(2) .accommodation-image {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+.accommodation-card:hover .accommodation-image img {
+    transform: scale(1.05);
 }
 
 .accommodation-content {
