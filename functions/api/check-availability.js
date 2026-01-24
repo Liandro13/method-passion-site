@@ -1,62 +1,43 @@
 // Cloudflare Pages Function - Check Availability from Excel
-// Reads Excel files from OneDrive using Microsoft Graph API
+// Reads Excel files from OneDrive using public share links
 
-// Excel file IDs for each accommodation
+// Public OneDrive share links for each accommodation
 const EXCEL_FILES = {
   'Esperança Terrace': {
-    driveId: '9A22752E1635A56D',
-    itemId: '9A22752E1635A56D!s2ff1f69073b948fabab35df6b306a0e2'
+    shareUrl: 'https://1drv.ms/x/c/9a22752e1635a56d/IQCQ9vEvuXP6SLqzXfazBqDiAbyqsGohQUeZsIrkKeevNYY?e=cPQzsb'
   },
   'Douro & Sabor Escape': {
-    driveId: '9A22752E1635A56D',
-    itemId: '9A22752E1635A56D!sf55321e4034a4ecebf03bbdcba581719'
+    shareUrl: '' // TODO: Add share link
   },
   'Nattura Gerês Village': {
-    driveId: '9A22752E1635A56D',
-    itemId: '9A22752E1635A56D!s15f4a7efc4df4065ac43da709c44965d'
+    shareUrl: '' // TODO: Add share link
   }
 };
 
-// Microsoft Graph API authentication
-async function getAccessToken(env) {
-  const tokenUrl = `https://login.microsoftonline.com/${env.TENANT_ID}/oauth2/v2.0/token`;
-  
-  const params = new URLSearchParams({
-    client_id: env.CLIENT_ID,
-    client_secret: env.CLIENT_SECRET,
-    scope: 'https://graph.microsoft.com/.default',
-    grant_type: 'client_credentials'
-  });
-
-  const response = await fetch(tokenUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
-    },
-    body: params.toString()
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to get access token');
-  }
-
-  const data = await response.json();
-  return data.access_token;
+// Convert OneDrive share URL to API endpoint
+function getShareToken(shareUrl) {
+  // Encode the URL in base64 (URL-safe, unpadded)
+  const base64 = btoa(shareUrl)
+    .replace(/=+$/, '') // Remove padding
+    .replace(/\+/g, '-') // Replace + with -
+    .replace(/\//g, '_'); // Replace / with _
+  return `u!${base64}`;
 }
 
-// Read Excel file and extract booked dates
-async function getBookedDates(accessToken, driveId, itemId, debugInfo = { logs: [] }) {
-  // Get worksheet data
-  const url = `https://graph.microsoft.com/v1.0/drives/${driveId}/items/${itemId}/workbook/worksheets/reservas/usedRange`;
+// Read Excel file from public share link
+async function getBookedDates(shareUrl, debugInfo = { logs: [] }) {
+  try {
+    const shareToken = getShareToken(shareUrl);
+    const url = `https://graph.microsoft.com/v1.0/shares/${shareToken}/driveItem/workbook/worksheets/reservas/usedRange`;
+    
+    debugInfo.logs.push(`Share token: ${shareToken}`);
+    debugInfo.logs.push(`Fetching: ${url}`);
   
-  debugInfo.logs.push(`Fetching: ${url}`);
-  
-  const response = await fetch(url, {
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json'
-    }
-  });
+    const response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -103,6 +84,10 @@ async function getBookedDates(accessToken, driveId, itemId, debugInfo = { logs: 
 
   debugInfo.logs.push(`Total booked dates found: ${bookedDates.length}`);
   return bookedDates;
+  } catch (error) {
+    debugInfo.logs.push(`Error: ${error.message}`);
+    return [];
+  }
 }
 
 // Parse Excel date (can be string, Excel serial number, or date object)
@@ -199,21 +184,18 @@ export async function onRequest(context) {
 
     // Get Excel file info
     const excelFile = EXCEL_FILES[accommodation];
-    if (!excelFile) {
+    if (!excelFile || !excelFile.shareUrl) {
       return new Response(JSON.stringify({
-        error: 'Invalid accommodation name'
+        error: 'Invalid accommodation or share link not configured'
       }), {
         status: 400,
         headers: corsHeaders
       });
     }
 
-    // Get access token
-    const accessToken = await getAccessToken(context.env);
-
-    // Get booked dates from Excel
+    // Get booked dates from Excel using public share link
     const debugInfo = { logs: [] };
-    const bookedDates = await getBookedDates(accessToken, excelFile.driveId, excelFile.itemId, debugInfo);
+    const bookedDates = await getBookedDates(excelFile.shareUrl, debugInfo);
 
     // Check availability
     const result = checkAvailability(checkIn, checkOut, bookedDates);
