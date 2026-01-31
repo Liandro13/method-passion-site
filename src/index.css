@@ -84,3 +84,49 @@ body {
 .card:hover {
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
 }
+
+/* React DatePicker customization */
+.react-datepicker {
+  font-family: var(--font-family-sans);
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.react-datepicker__header {
+  background-color: var(--color-background);
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.react-datepicker__current-month {
+  color: var(--color-dark);
+  font-weight: 600;
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--in-selecting-range,
+.react-datepicker__day--in-range {
+  background-color: var(--color-primary) !important;
+  color: white !important;
+}
+
+.react-datepicker__day--keyboard-selected {
+  background-color: var(--color-primary-light);
+}
+
+.react-datepicker__day:hover {
+  background-color: var(--color-primary-light);
+}
+
+.react-datepicker__day--excluded,
+.react-datepicker__day--disabled {
+  background-color: #fee2e2 !important;
+  color: #dc2626 !important;
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
+.react-datepicker__day--excluded:hover,
+.react-datepicker__day--disabled:hover {
+  background-color: #fecaca !important;
+}

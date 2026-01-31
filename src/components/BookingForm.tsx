@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { checkAvailability } from '../lib/api';
 import type { Language } from '../types';
 
@@ -31,26 +33,37 @@ export default function BookingForm({
   language,
   translations: t
 }: BookingFormProps) {
-  const [checkIn, setCheckIn] = useState('');
-  const [checkOut, setCheckOut] = useState('');
+  const [checkInDate, setCheckInDate] = useState<Date | null>(null);
+  const [checkOutDate, setCheckOutDate] = useState<Date | null>(null);
   const [guests, setGuests] = useState(1);
   const [nationality, setNationality] = useState('');
   const [primaryName, setPrimaryName] = useState('');
   const [additionalNames, setAdditionalNames] = useState<string[]>([]);
   const [error, setError] = useState('');
   const [checking, setChecking] = useState(false);
-  const [blockedDates, setBlockedDates] = useState<{checkIn: string; checkOut: string}[]>([]);
-
-  // Get today's date in YYYY-MM-DD format
-  const today = new Date().toISOString().split('T')[0];
+  const [excludedDates, setExcludedDates] = useState<Date[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Load blocked dates when accommodation changes
   useEffect(() => {
+    setLoading(true);
     checkAvailability(accommodation, '', '').then(result => {
       if (result.bookedDates) {
-        setBlockedDates(result.bookedDates);
+        // Convert date ranges to individual excluded dates
+        const dates: Date[] = [];
+        for (const range of result.bookedDates) {
+          const start = new Date(range.checkIn);
+          const end = new Date(range.checkOut);
+          const current = new Date(start);
+          while (current < end) {
+            dates.push(new Date(current));
+            current.setDate(current.getDate() + 1);
+          }
+        }
+        setExcludedDates(dates);
       }
-    }).catch(() => {});
+      setLoading(false);
+    }).catch(() => setLoading(false));
   }, [accommodation]);
 
   const addName = () => {
@@ -72,10 +85,13 @@ export default function BookingForm({
     setError('');
 
     // Validate fields
-    if (!checkIn || !checkOut || !nationality || !primaryName) {
+    if (!checkInDate || !checkOutDate || !nationality || !primaryName) {
       setError(t.fillAllFields);
       return;
     }
+
+    const checkIn = checkInDate.toISOString().split('T')[0];
+    const checkOut = checkOutDate.toISOString().split('T')[0];
 
     setChecking(true);
 
@@ -111,11 +127,16 @@ export default function BookingForm({
     }
   };
 
-  // Check if a date is blocked
-  const isDateBlocked = (date: string) => {
-    return blockedDates.some(range => {
-      return date >= range.checkIn && date < range.checkOut;
-    });
+  // Format date for locale display
+  const getLocale = () => {
+    const locales: Record<Language, string> = {
+      pt: 'pt-PT',
+      en: 'en-GB',
+      fr: 'fr-FR',
+      de: 'de-DE',
+      es: 'es-ES'
+    };
+    return locales[language];
   };
 
   return (
@@ -129,22 +150,29 @@ export default function BookingForm({
           </div>
         )}
 
+        {loading && (
+          <div className="text-center text-sm text-gray-500">Loading availability...</div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-dark mb-2">
               {t.checkIn} *
             </label>
-            <input
-              type="date"
-              value={checkIn}
-              min={today}
-              onChange={(e) => {
-                setCheckIn(e.target.value);
-                if (checkOut && e.target.value >= checkOut) {
-                  setCheckOut('');
+            <DatePicker
+              selected={checkInDate}
+              onChange={(date: Date | null) => {
+                setCheckInDate(date);
+                if (checkOutDate && date && date >= checkOutDate) {
+                  setCheckOutDate(null);
                 }
               }}
-              className={`input-field ${isDateBlocked(checkIn) ? 'border-red-500' : ''}`}
+              excludeDates={excludedDates}
+              minDate={new Date()}
+              dateFormat="dd/MM/yyyy"
+              locale={getLocale()}
+              placeholderText="dd/mm/yyyy"
+              className="input-field w-full"
               required
             />
           </div>
@@ -153,12 +181,15 @@ export default function BookingForm({
             <label className="block text-sm font-medium text-dark mb-2">
               {t.checkOut} *
             </label>
-            <input
-              type="date"
-              value={checkOut}
-              min={checkIn || today}
-              onChange={(e) => setCheckOut(e.target.value)}
-              className="input-field"
+            <DatePicker
+              selected={checkOutDate}
+              onChange={(date: Date | null) => setCheckOutDate(date)}
+              excludeDates={excludedDates}
+              minDate={checkInDate || new Date()}
+              dateFormat="dd/MM/yyyy"
+              locale={getLocale()}
+              placeholderText="dd/mm/yyyy"
+              className="input-field w-full"
               required
             />
           </div>
