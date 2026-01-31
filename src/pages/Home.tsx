@@ -33,10 +33,10 @@ export default function Home() {
   const t = translations[language];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header language={language} onLanguageChange={setLanguage} />
       
-      <main className="max-w-6xl mx-auto px-4 py-8">
+      <main className="max-w-6xl mx-auto px-4 py-8 flex-1">
         {/* Accommodation Selection */}
         <section className="mb-12">
           <h2 className="text-2xl font-semibold text-dark mb-6 text-center">
