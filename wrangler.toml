@@ -1,0 +1,8 @@
+name = "method-passion-site"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = "./dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "method-passion-db"
+database_id = "253e6301-ec71-402f-aee0-8b692d18d125"

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Method & Passion - Alojamento Local. Reserve Esperança Terrace ou Villa Natura Gerês de forma rápida e segura.">
+  <title>Method & Passion – Alojamento Local</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <div class="container">
+      <div class="header-top">
+        <div class="language-selector">
+          <label for="languageSelect">🌍</label>
+          <select id="languageSelect">
+            <option value="pt">Português</option>
+            <option value="en">English</option>
+            <option value="fr">Français</option>
+            <option value="de">Deutsch</option>
+            <option value="es">Español</option>
+          </select>
+        </div>
+      </div>
+      <h1 data-i18n="title">Method & Passion</h1>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container">
+    <!-- Accommodation Selection -->
+    <section>
+        <div></div>
+      <h2 data-i18n="chooseAccommodation">Escolha o Seu Alojamento</h2>
+      <div class="accommodations">
+        <!-- Esperança Terrace -->
+        <div class="accommodation-card" data-accommodation="Esperança Terrace">
+          <div class="accommodation-image">
+            <img src="images/esperança.jpeg" alt="Esperança Terrace">
+          </div>
+          <div class="accommodation-content">
+            <h3>Esperança Terrace</h3>
+            <p data-i18n="esperancaDesc">Um refúgio tranquilo com vistas deslumbrantes e todas as comodidades para uma estadia inesquecível.</p>
+            <div class="accommodation-features">
+              <span class="feature" data-i18n="wifiFree">Wi-Fi Grátis</span>
+              <span class="feature" data-i18n="panoramicView">Vista Panorâmica</span>
+              <span class="feature" data-i18n="privateTerrace">Terraço Privado</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Nattura Gerês Village -->
+        <div class="accommodation-card" data-accommodation="Nattura Gerês Village">
+          <div class="accommodation-image">
+            <img src="images/geres.jpeg" alt="Nattura Gerês Village">
+          </div>
+          <div class="accommodation-content">
+            <h3>Nattura Gerês Village</h3>
+            <p data-i18n="natturaDesc">Em plena natureza do Gerês, perfeito para quem procura paz, natureza e conforto excepcional.</p>
+            <div class="accommodation-features">
+              <span class="feature" data-i18n="natureView">Natureza Envolvente</span>
+              <span class="feature" data-i18n="totalComfort">Conforto Total</span>
+              <span class="feature" data-i18n="naturalPark">Parque Natural</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Douro & Sabor Escape -->
+        <div class="accommodation-card" data-accommodation="Douro & Sabor Escape">
+          <div class="accommodation-image">
+            <img src="images/moncorvo.jpeg" alt="Douro & Sabor Escape">
+          </div>
+          <div class="accommodation-content">
+            <h3>Douro & Sabor Escape</h3>
+            <p data-i18n="douroDesc">Uma experiência única entre vinhas e o rio, ideal para desconectar e apreciar a beleza do Douro.</p>
+            <div class="accommodation-features">
+              <span class="feature" data-i18n="wineRegion">Região Vinhateira</span>
+              <span class="feature" data-i18n="riverView">Vista Rio</span>
+              <span class="feature" data-i18n="tranquility">Tranquilidade</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Booking Form -->
+    <section class="booking-section">
+      <h2 data-i18n="makeReservation">Faça a Sua Reserva</h2>
+      <form id="bookingForm" class="booking-form">
+        
+        <!-- Check-in and Check-out Dates -->
+        <div class="date-inputs">
+          <div class="form-group">
+            <label for="checkin">
+              <span>📅 <span data-i18n="checkin">Data de Check-in</span></span>
+              <span class="required">*</span>
+            </label>
+            <input type="date" id="checkin" required>
+          </div>
+
+          <div class="form-group">
+            <label for="checkout">
+              <span>📅 <span data-i18n="checkout">Data de Check-out</span></span>
+              <span class="required">*</span>
+            </label>
+            <input type="date" id="checkout" required>
+          </div>
+        </div>
+
+        <!-- Number of Guests -->
+        <div class="form-group">
+          <label for="guests">
+            <span>👥 <span data-i18n="guests">Número de Hóspedes</span></span>
+            <span class="required">*</span>
+          </label>
+          <input type="number" id="guests" min="1" max="20" data-i18n="guestsPlaceholder" placeholder="Ex: 2" required>
+        </div>
+
+        <!-- Nationality -->
+        <div class="form-group">
+          <label for="nationality">
+            <span>🌍 <span data-i18n="nationality">Nacionalidade</span></span>
+            <span class="required">*</span>
+          </label>
+          <select id="nationality" required>
+            <option value="" data-i18n="nationalityPlaceholder">Selecione a nacionalidade</option>
+          </select>
+        </div>
+
+        <!-- Guest Names -->
+        <div class="form-group">
+          <label for="primaryName">
+            <span>👤 <span data-i18n="responsibleName">Nome do Responsável</span></span>
+            <span class="required">*</span>
+          </label>
+          <div id="namesContainer" class="names-section">
+            <div class="name-input-wrapper">
+              <input type="text" id="primaryName" data-i18n="namePlaceholder" placeholder="Nome completo do responsável pela reserva" required>
+            </div>
+          </div>
+          <button type="button" id="addName" class="btn-add-name" data-i18n="addMoreNames">Adicionar mais nomes</button>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="btn-submit" data-i18n="bookWhatsapp">
+          Reservar via WhatsApp
+        </button>
+      </form>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <p data-i18n="footer">&copy; 2026 Method & Passion - Alojamento Local. Todos os direitos reservados.</p>
+    </div>
+  </footer>
+
+  <!-- JavaScript -->
+  <script src="js/booking.js"></script>
+</body>
+</html>
