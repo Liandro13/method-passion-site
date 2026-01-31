@@ -57,7 +57,11 @@ export async function onRequestPut(context) {
 
     const id = context.params.id;
     const data = await context.request.json();
-    const { check_in, check_out, guests, nationality, primary_name, additional_names, notes, status } = data;
+    const { 
+      check_in, check_out, guests, nationality, primary_name, additional_names, notes, status,
+      // Financial fields
+      valor, imposto_municipal, comissao, taxa_bancaria, valor_sem_comissoes, valor_sem_iva, iva, plataforma
+    } = data;
 
     // Build update query dynamically
     const updates = [];
@@ -71,6 +75,16 @@ export async function onRequestPut(context) {
     if (additional_names !== undefined) { updates.push('additional_names = ?'); values.push(additional_names); }
     if (notes !== undefined) { updates.push('notes = ?'); values.push(notes); }
     if (status) { updates.push('status = ?'); values.push(status); }
+    
+    // Financial fields
+    if (valor !== undefined) { updates.push('valor = ?'); values.push(valor); }
+    if (imposto_municipal !== undefined) { updates.push('imposto_municipal = ?'); values.push(imposto_municipal); }
+    if (comissao !== undefined) { updates.push('comissao = ?'); values.push(comissao); }
+    if (taxa_bancaria !== undefined) { updates.push('taxa_bancaria = ?'); values.push(taxa_bancaria); }
+    if (valor_sem_comissoes !== undefined) { updates.push('valor_sem_comissoes = ?'); values.push(valor_sem_comissoes); }
+    if (valor_sem_iva !== undefined) { updates.push('valor_sem_iva = ?'); values.push(valor_sem_iva); }
+    if (iva !== undefined) { updates.push('iva = ?'); values.push(iva); }
+    if (plataforma !== undefined) { updates.push('plataforma = ?'); values.push(plataforma); }
     
     updates.push('updated_at = ?');
     values.push(new Date().toISOString());

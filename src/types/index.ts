@@ -24,6 +24,15 @@ export interface Booking {
   additional_names: string;
   notes: string;
   status: 'confirmed' | 'pending' | 'cancelled';
+  // Financial fields (required when confirmed)
+  valor?: number;
+  imposto_municipal?: number;
+  comissao?: number;
+  taxa_bancaria?: number;
+  valor_sem_comissoes?: number;
+  valor_sem_iva?: number;
+  iva?: number;
+  plataforma?: string;
   created_at: string;
   updated_at: string;
 }

@@ -73,7 +73,11 @@ export async function onRequestPost(context) {
     }
 
     const data = await context.request.json();
-    const { accommodation_id, check_in, check_out, guests, nationality, primary_name, additional_names, notes } = data;
+    const { 
+      accommodation_id, check_in, check_out, guests, nationality, primary_name, additional_names, notes,
+      // Financial fields
+      valor, imposto_municipal, comissao, taxa_bancaria, valor_sem_comissoes, valor_sem_iva, iva, plataforma
+    } = data;
 
     // Validate required fields
     if (!accommodation_id || !check_in || !check_out || !guests || !primary_name) {
@@ -99,8 +103,8 @@ export async function onRequestPost(context) {
 
     // Insert booking (default status: pending - requires admin approval)
     const result = await context.env.DB.prepare(`
-      INSERT INTO bookings (accommodation_id, check_in, check_out, guests, nationality, primary_name, additional_names, notes, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')
+      INSERT INTO bookings (accommodation_id, check_in, check_out, guests, nationality, primary_name, additional_names, notes, status, valor, imposto_municipal, comissao, taxa_bancaria, valor_sem_comissoes, valor_sem_iva, iva, plataforma)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       accommodation_id, 
       check_in, 
@@ -109,7 +113,15 @@ export async function onRequestPost(context) {
       nationality || '', 
       primary_name, 
       additional_names || '', 
-      notes || ''
+      notes || '',
+      valor || 0,
+      imposto_municipal || 0,
+      comissao || 0,
+      taxa_bancaria || 0,
+      valor_sem_comissoes || 0,
+      valor_sem_iva || 0,
+      iva || 0,
+      plataforma || ''
     ).run();
 
     return new Response(JSON.stringify({ 

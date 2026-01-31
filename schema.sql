@@ -27,6 +27,15 @@ CREATE TABLE IF NOT EXISTS bookings (
   additional_names TEXT,
   notes TEXT,
   status TEXT DEFAULT 'confirmed',
+  -- Financial fields
+  valor REAL DEFAULT 0,
+  imposto_municipal REAL DEFAULT 0,
+  comissao REAL DEFAULT 0,
+  taxa_bancaria REAL DEFAULT 0,
+  valor_sem_comissoes REAL DEFAULT 0,
+  valor_sem_iva REAL DEFAULT 0,
+  iva REAL DEFAULT 0,
+  plataforma TEXT DEFAULT '',
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (accommodation_id) REFERENCES accommodations(id)
