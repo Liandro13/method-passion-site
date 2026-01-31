@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { checkAuth, logout } from '../lib/api';
+import { checkAuth, logout, getBookings } from '../lib/api';
 import AccommodationPanel from '../components/AccommodationPanel';
+import ApprovalsPanel from '../components/ApprovalsPanel';
+import TeamsPanel from '../components/TeamsPanel';
+
+type TabType = 'accommodation' | 'approvals' | 'teams';
 
 const accommodations = [
   { id: 1, name: 'Esperança Terrace' },
@@ -10,7 +14,9 @@ const accommodations = [
 ];
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState(0);
+  const [tabType, setTabType] = useState<TabType>('accommodation');
+  const [activeAccommodation, setActiveAccommodation] = useState(0);
+  const [pendingCount, setPendingCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -20,9 +26,22 @@ export default function Dashboard() {
         navigate('/admin');
       } else {
         setLoading(false);
+        // Load pending count
+        getBookings(undefined, 'pending').then(res => {
+          if (res.bookings) setPendingCount(res.bookings.length);
+        });
       }
     }).catch(() => navigate('/admin'));
   }, [navigate]);
+
+  // Refresh pending count when switching tabs
+  useEffect(() => {
+    if (tabType === 'approvals') {
+      getBookings(undefined, 'pending').then(res => {
+        if (res.bookings) setPendingCount(res.bookings.length);
+      });
+    }
+  }, [tabType]);
 
   const handleLogout = async () => {
     await logout();
@@ -58,13 +77,17 @@ export default function Dashboard() {
       {/* Tabs */}
       <div className="border-b border-gray-200 bg-white">
         <div className="max-w-7xl mx-auto px-4">
-          <nav className="flex space-x-8">
+          <nav className="flex space-x-8 overflow-x-auto">
+            {/* Accommodation tabs */}
             {accommodations.map((acc, index) => (
               <button
                 key={acc.id}
-                onClick={() => setActiveTab(index)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                  activeTab === index
+                onClick={() => {
+                  setTabType('accommodation');
+                  setActiveAccommodation(index);
+                }}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                  tabType === 'accommodation' && activeAccommodation === index
                     ? 'border-primary text-primary'
                     : 'border-transparent text-gray-500 hover:text-dark hover:border-gray-300'
                 }`}
@@ -72,16 +95,52 @@ export default function Dashboard() {
                 {acc.name}
               </button>
             ))}
+            
+            {/* Separator */}
+            <div className="border-l border-gray-300 mx-2 self-stretch my-2" />
+            
+            {/* Approvals tab */}
+            <button
+              onClick={() => setTabType('approvals')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap flex items-center gap-2 ${
+                tabType === 'approvals'
+                  ? 'border-yellow-500 text-yellow-600'
+                  : 'border-transparent text-gray-500 hover:text-dark hover:border-gray-300'
+              }`}
+            >
+              Aprovações
+              {pendingCount > 0 && (
+                <span className="px-2 py-0.5 bg-yellow-500 text-white text-xs rounded-full">
+                  {pendingCount}
+                </span>
+              )}
+            </button>
+            
+            {/* Teams tab */}
+            <button
+              onClick={() => setTabType('teams')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                tabType === 'teams'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-gray-500 hover:text-dark hover:border-gray-300'
+              }`}
+            >
+              Equipas
+            </button>
           </nav>
         </div>
       </div>
 
       {/* Content */}
       <main className="max-w-7xl mx-auto px-4 py-6">
-        <AccommodationPanel
-          accommodationId={accommodations[activeTab].id}
-          accommodationName={accommodations[activeTab].name}
-        />
+        {tabType === 'accommodation' && (
+          <AccommodationPanel
+            accommodationId={accommodations[activeAccommodation].id}
+            accommodationName={accommodations[activeAccommodation].name}
+          />
+        )}
+        {tabType === 'approvals' && <ApprovalsPanel />}
+        {tabType === 'teams' && <TeamsPanel />}
       </main>
     </div>
   );

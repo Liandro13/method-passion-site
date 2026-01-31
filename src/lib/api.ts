@@ -11,10 +11,15 @@ export async function checkAvailability(accommodation: string, checkIn: string, 
   return response.json();
 }
 
-export async function getBookings(accommodationId?: number) {
-  const url = accommodationId 
-    ? `${API_BASE}/bookings?accommodation_id=${accommodationId}`
-    : `${API_BASE}/bookings`;
+export async function getBookings(accommodationId?: number, status?: string) {
+  let url = `${API_BASE}/bookings`;
+  const params = new URLSearchParams();
+  
+  if (accommodationId) params.append('accommodation_id', accommodationId.toString());
+  if (status) params.append('status', status);
+  
+  if (params.toString()) url += `?${params.toString()}`;
+  
   const response = await fetch(url, { credentials: 'include' });
   return response.json();
 }

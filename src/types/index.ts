@@ -60,5 +60,6 @@ export interface CalendarEvent {
     type: 'booking' | 'blocked';
     bookingId?: number;
     blockedId?: number;
+    status?: string;
   };
 }

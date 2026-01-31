@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { getBookings, getBlockedDates, createBooking, deleteBooking, createBlockedDate, deleteBlockedDate } from '../lib/api';
+import { getBookings, getBlockedDates, createBooking, updateBooking, deleteBooking, createBlockedDate, deleteBlockedDate } from '../lib/api';
 import type { Booking, BlockedDate, CalendarEvent } from '../types';
 import BookingModal from './BookingModal';
 import BlockedDateModal from './BlockedDateModal';
@@ -48,16 +48,27 @@ export default function AccommodationPanel({ accommodationId, accommodationName:
     const calendarEvents: CalendarEvent[] = [];
 
     bookings.forEach(booking => {
+      // Color based on status
+      const statusColors: Record<string, { bg: string; border: string }> = {
+        confirmed: { bg: '#22c55e', border: '#16a34a' }, // green
+        pending: { bg: '#eab308', border: '#ca8a04' },   // yellow
+        cancelled: { bg: '#6b7280', border: '#4b5563' }  // gray
+      };
+      const colors = statusColors[booking.status] || statusColors.pending;
+      const statusLabel = booking.status === 'pending' ? ' (Pendente)' : 
+                          booking.status === 'cancelled' ? ' (Cancelado)' : '';
+
       calendarEvents.push({
         id: `booking-${booking.id}`,
-        title: booking.primary_name,
+        title: `${booking.primary_name}${statusLabel}`,
         start: booking.check_in,
         end: booking.check_out,
-        backgroundColor: '#22c55e', // green
-        borderColor: '#16a34a',
+        backgroundColor: colors.bg,
+        borderColor: colors.border,
         extendedProps: {
           type: 'booking',
-          bookingId: booking.id
+          bookingId: booking.id,
+          status: booking.status
         }
       });
     });
@@ -110,12 +121,19 @@ export default function AccommodationPanel({ accommodationId, accommodationName:
     primary_name: string;
     additional_names?: string;
     notes?: string;
+    status?: string;
   }) => {
     try {
-      await createBooking({
-        accommodation_id: accommodationId,
-        ...data
-      });
+      if (editingBooking) {
+        // Update existing booking
+        await updateBooking(editingBooking.id, data);
+      } else {
+        // Create new booking
+        await createBooking({
+          accommodation_id: accommodationId,
+          ...data
+        });
+      }
       await loadData();
       setShowBookingModal(false);
       setEditingBooking(null);

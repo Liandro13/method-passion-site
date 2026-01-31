@@ -30,11 +30,11 @@ export async function onRequestPost(context) {
       });
     }
 
-    // Get all bookings for this accommodation
+    // Get all CONFIRMED bookings for this accommodation
     const bookings = await context.env.DB.prepare(`
       SELECT check_in as checkIn, check_out as checkOut 
       FROM bookings 
-      WHERE accommodation_id = ?
+      WHERE accommodation_id = ? AND status = 'confirmed'
     `).bind(accommodationId).all();
 
     // Get all blocked dates for this accommodation

@@ -12,6 +12,7 @@ interface BookingModalProps {
     primary_name: string;
     additional_names?: string;
     notes?: string;
+    status?: string;
   }) => void;
   onDelete?: () => void;
   onClose: () => void;
@@ -25,6 +26,7 @@ export default function BookingModal({ booking, defaultDates, onSave, onDelete, 
   const [primaryName, setPrimaryName] = useState('');
   const [additionalNames, setAdditionalNames] = useState('');
   const [notes, setNotes] = useState('');
+  const [status, setStatus] = useState<'pending' | 'confirmed' | 'cancelled'>('pending');
 
   useEffect(() => {
     if (booking) {
@@ -35,9 +37,11 @@ export default function BookingModal({ booking, defaultDates, onSave, onDelete, 
       setPrimaryName(booking.primary_name);
       setAdditionalNames(booking.additional_names || '');
       setNotes(booking.notes || '');
+      setStatus(booking.status || 'pending');
     } else if (defaultDates) {
       setCheckIn(defaultDates.start);
       setCheckOut(defaultDates.end);
+      setStatus('pending');
     }
   }, [booking, defaultDates]);
 
@@ -50,7 +54,8 @@ export default function BookingModal({ booking, defaultDates, onSave, onDelete, 
       nationality,
       primary_name: primaryName,
       additional_names: additionalNames,
-      notes
+      notes,
+      status
     });
   };
 
@@ -155,6 +160,22 @@ export default function BookingModal({ booking, defaultDates, onSave, onDelete, 
               placeholder="Observações..."
             />
           </div>
+
+          {/* Status selector - only shown when editing */}
+          {booking && (
+            <div>
+              <label className="block text-sm font-medium text-dark mb-1">Estado</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as 'pending' | 'confirmed' | 'cancelled')}
+                className="input-field"
+              >
+                <option value="pending">🟡 Pendente</option>
+                <option value="confirmed">🟢 Confirmado</option>
+                <option value="cancelled">⚫ Cancelado</option>
+              </select>
+            </div>
+          )}
 
           <div className="flex gap-3 pt-4">
             <button type="submit" className="btn-primary flex-1">

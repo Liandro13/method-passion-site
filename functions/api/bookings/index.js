@@ -22,25 +22,33 @@ export async function onRequestGet(context) {
 
     const url = new URL(context.request.url);
     const accommodationId = url.searchParams.get('accommodation_id');
+    const status = url.searchParams.get('status');
 
     let query = `
       SELECT b.*, a.name as accommodation_name 
       FROM bookings b 
       JOIN accommodations a ON b.accommodation_id = a.id
+      WHERE 1=1
     `;
+    const params = [];
     
     if (accommodationId) {
-      query += ` WHERE b.accommodation_id = ?`;
-      const result = await context.env.DB.prepare(query)
-        .bind(parseInt(accommodationId))
-        .all();
-      return new Response(JSON.stringify({ bookings: result.results }), { 
-        headers: corsHeaders 
-      });
+      query += ` AND b.accommodation_id = ?`;
+      params.push(parseInt(accommodationId));
     }
-
+    
+    if (status) {
+      query += ` AND b.status = ?`;
+      params.push(status);
+    }
+    
     query += ` ORDER BY b.check_in DESC`;
-    const result = await context.env.DB.prepare(query).all();
+    
+    const stmt = context.env.DB.prepare(query);
+    const result = params.length > 0 
+      ? await stmt.bind(...params).all()
+      : await stmt.all();
+      
     return new Response(JSON.stringify({ bookings: result.results }), { 
       headers: corsHeaders 
     });
@@ -89,10 +97,10 @@ export async function onRequestPost(context) {
       });
     }
 
-    // Insert booking
+    // Insert booking (default status: pending - requires admin approval)
     const result = await context.env.DB.prepare(`
-      INSERT INTO bookings (accommodation_id, check_in, check_out, guests, nationality, primary_name, additional_names, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO bookings (accommodation_id, check_in, check_out, guests, nationality, primary_name, additional_names, notes, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')
     `).bind(
       accommodation_id, 
       check_in, 

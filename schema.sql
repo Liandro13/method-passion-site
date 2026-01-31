@@ -51,8 +51,30 @@ CREATE TABLE IF NOT EXISTS sessions (
   expires_at TEXT NOT NULL
 );
 
+-- Team users table (for teams portal)
+CREATE TABLE IF NOT EXISTS team_users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  name TEXT NOT NULL,
+  allowed_accommodations TEXT DEFAULT '[]',
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Team sessions table (separate from admin sessions)
+CREATE TABLE IF NOT EXISTS team_sessions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  token TEXT NOT NULL UNIQUE,
+  team_user_id INTEGER NOT NULL,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  expires_at TEXT NOT NULL,
+  FOREIGN KEY (team_user_id) REFERENCES team_users(id)
+);
+
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_bookings_accommodation ON bookings(accommodation_id);
 CREATE INDEX IF NOT EXISTS idx_bookings_dates ON bookings(check_in, check_out);
+CREATE INDEX IF NOT EXISTS idx_bookings_status ON bookings(status);
 CREATE INDEX IF NOT EXISTS idx_blocked_dates_accommodation ON blocked_dates(accommodation_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
+CREATE INDEX IF NOT EXISTS idx_team_sessions_token ON team_sessions(token);
