@@ -1,40 +1,19 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { SignIn, useUser } from '@clerk/clerk-react';
+import { useAuth } from '../hooks/useAuth';
 
 export default function TeamsLogin() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const { isSignedIn } = useUser();
+  const { role, isLoaded } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      const response = await fetch('/api/team/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ username, password })
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        setError(result.error || 'Credenciais inválidas');
-        setLoading(false);
-        return;
-      }
-
+  // Redirect to dashboard if already signed in with team or admin access
+  useEffect(() => {
+    if (isLoaded && isSignedIn && (role === 'team' || role === 'admin')) {
       navigate('/teams/dashboard');
-    } catch {
-      setError('Erro ao fazer login');
-      setLoading(false);
     }
-  };
+  }, [isLoaded, isSignedIn, role, navigate]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -49,55 +28,28 @@ export default function TeamsLogin() {
       {/* Login Form */}
       <main className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <div className="bg-white rounded-xl shadow-lg p-6 md:p-8">
-            <div className="text-center mb-6">
-              <div className="text-4xl mb-2">👥</div>
-              <h2 className="text-xl font-semibold text-dark">Acesso Equipas</h2>
-              <p className="text-sm text-gray-500">Limpeza e Receção</p>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm text-center">
-                  {error}
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-dark mb-1">Username</label>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="input-field"
-                  placeholder="username"
-                  required
-                  autoComplete="username"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-dark mb-1">Password</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="input-field"
-                  placeholder="••••••••"
-                  required
-                  autoComplete="current-password"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full btn-primary disabled:opacity-50"
-              >
-                {loading ? 'A entrar...' : 'Entrar'}
-              </button>
-            </form>
+          <div className="text-center mb-6">
+            <div className="text-4xl mb-2">👥</div>
+            <h2 className="text-xl font-semibold text-dark">Acesso Equipas</h2>
+            <p className="text-sm text-gray-500">Limpeza e Receção</p>
           </div>
+
+          <SignIn 
+            routing="hash"
+            signUpUrl={undefined}
+            afterSignInUrl="/teams/dashboard"
+            appearance={{
+              elements: {
+                rootBox: 'w-full',
+                card: 'shadow-lg rounded-xl',
+                headerTitle: 'hidden',
+                headerSubtitle: 'hidden',
+                socialButtonsBlockButton: 'hidden',
+                dividerRow: 'hidden',
+                formButtonPrimary: 'bg-primary hover:bg-primary/90 text-dark',
+              }
+            }}
+          />
 
           <p className="text-center text-sm text-gray-500 mt-4">
             Este acesso é apenas para membros da equipa.

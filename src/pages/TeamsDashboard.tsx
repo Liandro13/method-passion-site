@@ -1,13 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { UserButton } from '@clerk/clerk-react';
+import { useAuth } from '../hooks/useAuth';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
-
-interface TeamUser {
-  id: number;
-  name: string;
-  allowed_accommodations: number[];
-}
 
 interface Booking {
   id: number;
@@ -40,8 +36,14 @@ const ACCOMMODATION_COLORS: Record<number, { bg: string; border: string }> = {
   3: { bg: '#a855f7', border: '#9333ea' }, // purple - Douro & Sabor Escape
 };
 
+const ACCOMMODATION_NAMES: Record<number, string> = {
+  1: 'Esperança Terrace',
+  2: 'Nattura Gerês Village',
+  3: 'Douro & Sabor Escape'
+};
+
 export default function TeamsDashboard() {
-  const [user, setUser] = useState<TeamUser | null>(null);
+  const { isLoaded, role, name, allowedAccommodations } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,60 +51,63 @@ export default function TeamsDashboard() {
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
   const navigate = useNavigate();
 
-  const checkAuth = useCallback(async () => {
-    try {
-      const response = await fetch('/api/team/me', { credentials: 'include' });
-      const result = await response.json();
-      
-      if (!result.authenticated) {
-        navigate('/teams');
-        return;
-      }
-
-      setUser(result.user);
-    } catch {
+  // Check access
+  useEffect(() => {
+    if (isLoaded && role !== 'team' && role !== 'admin') {
       navigate('/teams');
     }
-  }, [navigate]);
+  }, [isLoaded, role, navigate]);
 
   const loadBookings = useCallback(async () => {
+    if (!allowedAccommodations.length) {
+      setLoading(false);
+      return;
+    }
+
     try {
-      const response = await fetch('/api/team/bookings', { credentials: 'include' });
-      const result = await response.json();
+      // Fetch bookings for each allowed accommodation
+      const allBookings: Booking[] = [];
       
-      if (result.bookings) {
-        setBookings(result.bookings);
+      for (const accId of allowedAccommodations) {
+        const response = await fetch(`/api/bookings?accommodation_id=${accId}&status=confirmed`);
+        const result = await response.json();
         
-        // Convert to calendar events
-        const calendarEvents: CalendarEvent[] = result.bookings.map((booking: Booking) => {
-          const colors = ACCOMMODATION_COLORS[booking.accommodation_id] || { bg: '#6b7280', border: '#4b5563' };
-          return {
-            id: `booking-${booking.id}`,
-            title: booking.primary_name,
-            start: booking.check_in,
-            end: booking.check_out,
-            backgroundColor: colors.bg,
-            borderColor: colors.border,
-            extendedProps: { booking }
-          };
-        });
-        setEvents(calendarEvents);
+        if (result.bookings) {
+          allBookings.push(...result.bookings.map((b: Booking) => ({
+            ...b,
+            accommodation_name: ACCOMMODATION_NAMES[b.accommodation_id] || `Alojamento ${b.accommodation_id}`
+          })));
+        }
       }
+      
+      setBookings(allBookings);
+      
+      // Convert to calendar events
+      const calendarEvents: CalendarEvent[] = allBookings.map((booking: Booking) => {
+        const colors = ACCOMMODATION_COLORS[booking.accommodation_id] || { bg: '#6b7280', border: '#4b5563' };
+        return {
+          id: `booking-${booking.id}`,
+          title: booking.primary_name,
+          start: booking.check_in,
+          end: booking.check_out,
+          backgroundColor: colors.bg,
+          borderColor: colors.border,
+          extendedProps: { booking }
+        };
+      });
+      setEvents(calendarEvents);
     } catch (error) {
       console.error('Error loading bookings:', error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [allowedAccommodations]);
 
   useEffect(() => {
-    checkAuth().then(() => loadBookings());
-  }, [checkAuth, loadBookings]);
-
-  const handleLogout = async () => {
-    await fetch('/api/team/logout', { method: 'POST', credentials: 'include' });
-    navigate('/teams');
-  };
+    if (isLoaded && (role === 'team' || role === 'admin')) {
+      loadBookings();
+    }
+  }, [isLoaded, role, loadBookings]);
 
   const handleEventClick = (clickInfo: { event: { extendedProps: Record<string, unknown> } }) => {
     const booking = clickInfo.event.extendedProps.booking as Booking;
@@ -118,7 +123,7 @@ export default function TeamsDashboard() {
     });
   };
 
-  if (loading) {
+  if (loading || !isLoaded) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-dark">A carregar...</div>
@@ -133,14 +138,9 @@ export default function TeamsDashboard() {
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div>
             <h1 className="text-lg font-bold">Method & Passion</h1>
-            <p className="text-sm opacity-80">Olá, {user?.name}</p>
+            <p className="text-sm opacity-80">Olá, {name}</p>
           </div>
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 bg-primary text-dark rounded-lg hover:bg-primary-light transition-colors text-sm"
-          >
-            Sair
-          </button>
+          <UserButton afterSignOutUrl="/teams" />
         </div>
       </header>
 

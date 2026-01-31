@@ -2,6 +2,28 @@
 
 const API_BASE = '/api';
 
+// Token getter function - will be set by useClerkToken hook
+let getAuthToken: (() => Promise<string | null>) | null = null;
+
+export function setAuthTokenGetter(getter: () => Promise<string | null>) {
+  getAuthToken = getter;
+}
+
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json'
+  };
+  
+  if (getAuthToken) {
+    const token = await getAuthToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+  }
+  
+  return headers;
+}
+
 export async function checkAvailability(accommodation: string, checkIn: string, checkOut: string) {
   const response = await fetch(`${API_BASE}/check-availability`, {
     method: 'POST',
@@ -20,7 +42,8 @@ export async function getBookings(accommodationId?: number, status?: string) {
   
   if (params.toString()) url += `?${params.toString()}`;
   
-  const response = await fetch(url, { credentials: 'include' });
+  const headers = await getAuthHeaders();
+  const response = await fetch(url, { headers, credentials: 'include' });
   return response.json();
 }
 
@@ -34,9 +57,10 @@ export async function createBooking(data: {
   additional_names?: string;
   notes?: string;
 }) {
+  const headers = await getAuthHeaders();
   const response = await fetch(`${API_BASE}/bookings`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     credentials: 'include',
     body: JSON.stringify(data)
   });
@@ -53,9 +77,10 @@ export async function updateBooking(id: number, data: Partial<{
   notes: string;
   status: string;
 }>) {
+  const headers = await getAuthHeaders();
   const response = await fetch(`${API_BASE}/bookings/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     credentials: 'include',
     body: JSON.stringify(data)
   });
@@ -63,8 +88,10 @@ export async function updateBooking(id: number, data: Partial<{
 }
 
 export async function deleteBooking(id: number) {
+  const headers = await getAuthHeaders();
   const response = await fetch(`${API_BASE}/bookings/${id}`, {
     method: 'DELETE',
+    headers,
     credentials: 'include'
   });
   return response.json();
@@ -74,7 +101,8 @@ export async function getBlockedDates(accommodationId?: number) {
   const url = accommodationId 
     ? `${API_BASE}/blocked-dates?accommodation_id=${accommodationId}`
     : `${API_BASE}/blocked-dates`;
-  const response = await fetch(url, { credentials: 'include' });
+  const headers = await getAuthHeaders();
+  const response = await fetch(url, { headers, credentials: 'include' });
   return response.json();
 }
 
@@ -84,9 +112,10 @@ export async function createBlockedDate(data: {
   end_date: string;
   reason?: string;
 }) {
+  const headers = await getAuthHeaders();
   const response = await fetch(`${API_BASE}/blocked-dates`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     credentials: 'include',
     body: JSON.stringify(data)
   });
@@ -94,37 +123,17 @@ export async function createBlockedDate(data: {
 }
 
 export async function deleteBlockedDate(id: number) {
+  const headers = await getAuthHeaders();
   const response = await fetch(`${API_BASE}/blocked-dates/${id}`, {
     method: 'DELETE',
+    headers,
     credentials: 'include'
   });
   return response.json();
 }
 
-export async function login(username: string, password: string) {
-  const response = await fetch(`${API_BASE}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ username, password })
-  });
-  return response.json();
-}
-
-export async function logout() {
-  const response = await fetch(`${API_BASE}/auth/logout`, {
-    method: 'POST',
-    credentials: 'include'
-  });
-  return response.json();
-}
-
-export async function checkAuth() {
-  const response = await fetch(`${API_BASE}/auth/me`, {
-    credentials: 'include'
-  });
-  return response.json();
-}
+// Auth is now handled by Clerk - these functions are kept for backwards compatibility
+// but shouldn't be used anymore
 
 export async function getAccommodations() {
   const response = await fetch(`${API_BASE}/accommodations`);

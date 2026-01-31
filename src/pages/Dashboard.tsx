@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { checkAuth, logout, getBookings } from '../lib/api';
+import { UserButton } from '@clerk/clerk-react';
+import { useAuth } from '../hooks/useAuth';
+import { getBookings } from '../lib/api';
 import AccommodationPanel from '../components/AccommodationPanel';
 import ApprovalsPanel from '../components/ApprovalsPanel';
 import TeamsPanel from '../components/TeamsPanel';
@@ -17,22 +19,24 @@ export default function Dashboard() {
   const [tabType, setTabType] = useState<TabType>('accommodation');
   const [activeAccommodation, setActiveAccommodation] = useState(0);
   const [pendingCount, setPendingCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const { isLoaded, role, name } = useAuth();
   const navigate = useNavigate();
 
+  // Check role and redirect if not admin
   useEffect(() => {
-    checkAuth().then(result => {
-      if (!result.authenticated) {
-        navigate('/admin');
-      } else {
-        setLoading(false);
-        // Load pending count
-        getBookings(undefined, 'pending').then(res => {
-          if (res.bookings) setPendingCount(res.bookings.length);
-        });
-      }
-    }).catch(() => navigate('/admin'));
-  }, [navigate]);
+    if (isLoaded && role !== 'admin') {
+      navigate('/admin');
+    }
+  }, [isLoaded, role, navigate]);
+
+  // Load pending count
+  useEffect(() => {
+    if (isLoaded && role === 'admin') {
+      getBookings(undefined, 'pending').then(res => {
+        if (res.bookings) setPendingCount(res.bookings.length);
+      });
+    }
+  }, [isLoaded, role]);
 
   // Refresh pending count when switching tabs
   useEffect(() => {
@@ -43,12 +47,7 @@ export default function Dashboard() {
     }
   }, [tabType]);
 
-  const handleLogout = async () => {
-    await logout();
-    navigate('/admin');
-  };
-
-  if (loading) {
+  if (!isLoaded || role !== 'admin') {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-dark">Loading...</div>
@@ -65,12 +64,10 @@ export default function Dashboard() {
             <h1 className="text-xl font-bold">Method & Passion</h1>
             <p className="text-sm opacity-80">Admin Dashboard</p>
           </div>
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 bg-primary text-dark rounded-lg hover:bg-primary-light transition-colors"
-          >
-            Logout
-          </button>
+          <div className="flex items-center gap-4">
+            <span className="text-sm opacity-80">{name}</span>
+            <UserButton afterSignOutUrl="/admin" />
+          </div>
         </div>
       </header>
 

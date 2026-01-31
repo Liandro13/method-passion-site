@@ -1,10 +1,10 @@
 // Single booking CRUD endpoint (GET, PUT, DELETE)
-import { verifySession } from '../_auth.js';
+import { requireAdmin } from '../_clerkAuth.js';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Access-Control-Allow-Credentials': 'true',
   'Content-Type': 'application/json'
 };
@@ -12,8 +12,8 @@ const corsHeaders = {
 // GET - Get single booking
 export async function onRequestGet(context) {
   try {
-    const isAuth = await verifySession(context);
-    if (!isAuth) {
+    const user = await requireAdmin(context);
+    if (!user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
         status: 401, 
         headers: corsHeaders 
@@ -47,8 +47,8 @@ export async function onRequestGet(context) {
 // PUT - Update booking
 export async function onRequestPut(context) {
   try {
-    const isAuth = await verifySession(context);
-    if (!isAuth) {
+    const user = await requireAdmin(context);
+    if (!user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
         status: 401, 
         headers: corsHeaders 
@@ -109,8 +109,8 @@ export async function onRequestPut(context) {
 // DELETE - Delete booking
 export async function onRequestDelete(context) {
   try {
-    const isAuth = await verifySession(context);
-    if (!isAuth) {
+    const user = await requireAdmin(context);
+    if (!user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
         status: 401, 
         headers: corsHeaders 

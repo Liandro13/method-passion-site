@@ -1,10 +1,10 @@
 // Blocked dates CRUD endpoint
-import { verifySession } from '../_auth.js';
+import { requireAdmin } from '../_clerkAuth.js';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Access-Control-Allow-Credentials': 'true',
   'Content-Type': 'application/json'
 };
@@ -12,13 +12,8 @@ const corsHeaders = {
 // GET - List blocked dates
 export async function onRequestGet(context) {
   try {
-    const isAuth = await verifySession(context);
-    if (!isAuth) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
-        status: 401, 
-        headers: corsHeaders 
-      });
-    }
+    const authError = await requireAdmin(context);
+    if (authError) return authError;
 
     const url = new URL(context.request.url);
     const accommodationId = url.searchParams.get('accommodation_id');
@@ -51,13 +46,8 @@ export async function onRequestGet(context) {
 // POST - Create blocked date
 export async function onRequestPost(context) {
   try {
-    const isAuth = await verifySession(context);
-    if (!isAuth) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
-        status: 401, 
-        headers: corsHeaders 
-      });
-    }
+    const authError = await requireAdmin(context);
+    if (authError) return authError;
 
     const data = await context.request.json();
     const { accommodation_id, start_date, end_date, reason } = data;

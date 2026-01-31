@@ -1,10 +1,10 @@
 // Bookings CRUD endpoint
-import { verifySession } from '../_auth.js';
+import { requireAdmin } from '../_clerkAuth.js';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Access-Control-Allow-Credentials': 'true',
   'Content-Type': 'application/json'
 };
@@ -12,8 +12,8 @@ const corsHeaders = {
 // GET - List bookings
 export async function onRequestGet(context) {
   try {
-    const isAuth = await verifySession(context);
-    if (!isAuth) {
+    const user = await requireAdmin(context);
+    if (!user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
         status: 401, 
         headers: corsHeaders 
@@ -64,8 +64,8 @@ export async function onRequestGet(context) {
 // POST - Create booking
 export async function onRequestPost(context) {
   try {
-    const isAuth = await verifySession(context);
-    if (!isAuth) {
+    const user = await requireAdmin(context);
+    if (!user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
         status: 401, 
         headers: corsHeaders 

@@ -14,6 +14,7 @@
     "pages:dev": "wrangler pages dev --d1=DB=method-passion-db -- npm run dev"
   },
   "dependencies": {
+    "@clerk/clerk-react": "^5.60.0",
     "@fullcalendar/core": "^6.1.20",
     "@fullcalendar/daygrid": "^6.1.20",
     "@fullcalendar/interaction": "^6.1.20",
