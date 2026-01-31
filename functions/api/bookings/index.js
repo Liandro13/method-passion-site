@@ -1,5 +1,5 @@
 // Bookings CRUD endpoint
-import { verifySession } from './_auth.js';
+import { verifySession } from '../_auth.js';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
