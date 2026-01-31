@@ -5,4 +5,4 @@ pages_build_output_dir = "./dist"
 [[d1_databases]]
 binding = "DB"
 database_name = "method-passion-db"
-database_id = "253e6301-ec71-402f-aee0-8b692d18d125"
+database_id = "e82eee17-893b-462e-9586-8a87c7c52f0f"
