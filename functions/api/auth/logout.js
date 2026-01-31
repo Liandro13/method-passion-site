@@ -2,9 +2,10 @@
 
 export async function onRequestPost(context) {
   const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': context.request.headers.get('Origin') || '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Credentials': 'true',
     'Content-Type': 'application/json'
   };
 
@@ -24,7 +25,7 @@ export async function onRequestPost(context) {
       'session=',
       'HttpOnly',
       'Secure',
-      'SameSite=Strict',
+      'SameSite=Lax',
       'Path=/',
       'Max-Age=0'
     ].join('; ');
@@ -45,12 +46,13 @@ export async function onRequestPost(context) {
   }
 }
 
-export async function onRequestOptions() {
+export async function onRequestOptions(context) {
   return new Response(null, {
     headers: {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': context.request.headers.get('Origin') || '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type'
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Credentials': 'true'
     }
   });
 }
