@@ -1,5 +1,15 @@
 // Types for the booking system
 
+export interface AccommodationImage {
+  id: number;
+  accommodation_id: number;
+  image_url: string;
+  display_order: number;
+  caption?: string;
+  is_primary: boolean;
+  created_at?: string;
+}
+
 export interface Accommodation {
   id: number;
   name: string;
@@ -10,6 +20,9 @@ export interface Accommodation {
   description_es?: string;
   image_url: string;
   max_guests: number;
+  images?: AccommodationImage[];
+  primary_image?: string;
+  amenities?: Record<string, string[]>;
 }
 
 export interface Booking {
@@ -44,16 +57,6 @@ export interface BlockedDate {
   end_date: string;
   reason: string;
   created_at: string;
-}
-
-export interface BookingFormData {
-  accommodation: string;
-  checkIn: string;
-  checkOut: string;
-  guests: number;
-  nationality: string;
-  primaryName: string;
-  additionalNames: string[];
 }
 
 export type Language = 'pt' | 'en' | 'fr' | 'de' | 'es';

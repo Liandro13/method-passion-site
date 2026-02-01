@@ -1,28 +1,13 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { getBookings, updateBooking, deleteBooking, createBooking } from '../lib/api';
+import { useState, useMemo } from 'react';
+import { updateBooking, createBooking } from '../lib/api';
 import type { Booking } from '../types';
 import BookingModal from './BookingModal';
-
-const ACCOMMODATIONS: Record<number, string> = {
-  1: 'Esperança Terrace',
-  2: 'Nattura Gerês Village',
-  3: 'Douro & Sabor Escape'
-};
-
-const STATUS_OPTIONS = [
-  { value: '', label: 'Todos os estados' },
-  { value: 'confirmed', label: '🟢 Confirmado' },
-  { value: 'pending', label: '🟡 Pendente' },
-  { value: 'cancelled', label: '⚫ Cancelado' }
-];
-
-const PLATFORM_OPTIONS = [
-  { value: '', label: 'Todas as plataformas' },
-  { value: 'Airbnb', label: 'Airbnb' },
-  { value: 'Booking', label: 'Booking' },
-  { value: 'VRBO', label: 'VRBO' },
-  { value: 'Direto', label: 'Direto' }
-];
+import StatusBadge from './ui/StatusBadge';
+import { ACCOMMODATION_MAP, STATUS_OPTIONS, PLATFORM_OPTIONS, ACCOMMODATIONS } from '../constants';
+import { formatDate } from '../utils/formatters';
+import { exportBookingsToCSV } from '../utils/exportCsv';
+import { useBookings } from '../hooks/useBookings';
+import { useBookingActions } from '../hooks/useBookingActions';
 
 interface BookingsListViewProps {
   onBookingChange?: () => void;
@@ -31,9 +16,11 @@ interface BookingsListViewProps {
 }
 
 export default function BookingsListView({ onBookingChange, initialStatusFilter, showAccommodationFilter = true }: BookingsListViewProps) {
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState<number | null>(null);
+  // Use centralized hooks
+  const { bookings, blockedDates, loading, reload } = useBookings({});
+  const { updatingId, handleQuickApprove, handleQuickReject, handleDelete } = useBookingActions({ 
+    onSuccess: () => { reload(); onBookingChange?.(); } 
+  });
   
   // Filtros
   const [searchQuery, setSearchQuery] = useState('');
@@ -50,24 +37,6 @@ export default function BookingsListView({ onBookingChange, initialStatusFilter,
   // Ordenação
   const [sortField, setSortField] = useState<keyof Booking>('check_in');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-
-  const loadBookings = useCallback(async () => {
-    try {
-      setLoading(true);
-      const result = await getBookings();
-      if (result.bookings) {
-        setBookings(result.bookings);
-      }
-    } catch (error) {
-      console.error('Error loading bookings:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadBookings();
-  }, [loadBookings]);
 
   // Aplicar filtros e ordenação
   const filteredBookings = useMemo(() => {
@@ -136,47 +105,6 @@ export default function BookingsListView({ onBookingChange, initialStatusFilter,
     }
   };
 
-  const handleQuickApprove = async (booking: Booking) => {
-    setUpdating(booking.id);
-    try {
-      await updateBooking(booking.id, { status: 'confirmed' });
-      await loadBookings();
-      onBookingChange?.();
-    } catch (error) {
-      console.error('Error approving booking:', error);
-    } finally {
-      setUpdating(null);
-    }
-  };
-
-  const handleQuickReject = async (booking: Booking) => {
-    if (!confirm('Tem certeza que deseja rejeitar esta reserva?')) return;
-    setUpdating(booking.id);
-    try {
-      await updateBooking(booking.id, { status: 'cancelled' });
-      await loadBookings();
-      onBookingChange?.();
-    } catch (error) {
-      console.error('Error rejecting booking:', error);
-    } finally {
-      setUpdating(null);
-    }
-  };
-
-  const handleDelete = async (booking: Booking) => {
-    if (!confirm('Tem certeza que deseja eliminar esta reserva permanentemente?')) return;
-    setUpdating(booking.id);
-    try {
-      await deleteBooking(booking.id);
-      await loadBookings();
-      onBookingChange?.();
-    } catch (error) {
-      console.error('Error deleting booking:', error);
-    } finally {
-      setUpdating(null);
-    }
-  };
-
   const handleSaveBooking = async (data: {
     check_in: string;
     check_out: string;
@@ -203,7 +131,7 @@ export default function BookingsListView({ onBookingChange, initialStatusFilter,
           notes: data.notes
         });
       }
-      await loadBookings();
+      await reload();
       onBookingChange?.();
       setShowBookingModal(false);
       setEditingBooking(null);
@@ -212,41 +140,7 @@ export default function BookingsListView({ onBookingChange, initialStatusFilter,
     }
   };
 
-  // Exportar para CSV
-  const exportToCSV = () => {
-    const headers = [
-      'ID', 'Alojamento', 'Hóspede', 'Check-in', 'Check-out', 
-      'Hóspedes', 'Nacionalidade', 'Estado', 'Plataforma', 'Valor', 'Notas'
-    ];
-    
-    const rows = filteredBookings.map(b => [
-      b.id,
-      ACCOMMODATIONS[b.accommodation_id] || b.accommodation_id,
-      b.primary_name,
-      b.check_in,
-      b.check_out,
-      b.guests,
-      b.nationality,
-      b.status,
-      b.plataforma || '',
-      b.valor || '',
-      (b.notes || '').replace(/"/g, '""')
-    ]);
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
-
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `reservas_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  const exportToCSV = () => exportBookingsToCSV(filteredBookings, 'reservas', true);
 
   const clearFilters = () => {
     setSearchQuery('');
@@ -258,32 +152,6 @@ export default function BookingsListView({ onBookingChange, initialStatusFilter,
   };
 
   const hasActiveFilters = searchQuery || statusFilter || accommodationFilter || platformFilter || dateFrom || dateTo;
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('pt-PT', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  };
-
-  const getStatusBadge = (status: string) => {
-    const styles: Record<string, string> = {
-      confirmed: 'bg-green-100 text-green-800',
-      pending: 'bg-yellow-100 text-yellow-800',
-      cancelled: 'bg-gray-100 text-gray-600'
-    };
-    const labels: Record<string, string> = {
-      confirmed: '🟢 Confirmado',
-      pending: '🟡 Pendente',
-      cancelled: '⚫ Cancelado'
-    };
-    return (
-      <span className={`px-2 py-1 text-xs rounded-full ${styles[status] || styles.pending}`}>
-        {labels[status] || status}
-      </span>
-    );
-  };
 
   const SortIcon = ({ field }: { field: keyof Booking }) => {
     if (sortField !== field) return <span className="text-gray-300 ml-1">↕</span>;
@@ -336,8 +204,8 @@ export default function BookingsListView({ onBookingChange, initialStatusFilter,
                 className="input-field w-full"
               >
                 <option value="">Todos os alojamentos</option>
-                {Object.entries(ACCOMMODATIONS).map(([id, name]) => (
-                  <option key={id} value={id}>{name}</option>
+                {ACCOMMODATIONS.map(acc => (
+                  <option key={acc.id} value={acc.id}>{acc.name}</option>
                 ))}
               </select>
             </div>
@@ -482,7 +350,7 @@ export default function BookingsListView({ onBookingChange, initialStatusFilter,
                   <tr key={booking.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 text-sm">
                       <span className="font-medium text-dark">
-                        {ACCOMMODATIONS[booking.accommodation_id] || `ID: ${booking.accommodation_id}`}
+                        {ACCOMMODATION_MAP[booking.accommodation_id] || `ID: ${booking.accommodation_id}`}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -499,7 +367,7 @@ export default function BookingsListView({ onBookingChange, initialStatusFilter,
                       {booking.guests}
                     </td>
                     <td className="px-4 py-3">
-                      {getStatusBadge(booking.status)}
+                      <StatusBadge status={booking.status} />
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600">
                       {booking.plataforma || '-'}
@@ -514,19 +382,19 @@ export default function BookingsListView({ onBookingChange, initialStatusFilter,
                           <>
                             <button
                               onClick={() => handleQuickApprove(booking)}
-                              disabled={updating === booking.id}
+                              disabled={updatingId === booking.id}
                               className="p-1.5 text-green-600 hover:bg-green-50 rounded transition-colors"
                               title="Aprovar"
                             >
-                              {updating === booking.id ? '...' : '✓'}
+                              {updatingId === booking.id ? '...' : '✓'}
                             </button>
                             <button
                               onClick={() => handleQuickReject(booking)}
-                              disabled={updating === booking.id}
+                              disabled={updatingId === booking.id}
                               className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
                               title="Rejeitar"
                             >
-                              {updating === booking.id ? '...' : '✗'}
+                              {updatingId === booking.id ? '...' : '✗'}
                             </button>
                           </>
                         )}
@@ -542,7 +410,7 @@ export default function BookingsListView({ onBookingChange, initialStatusFilter,
                         </button>
                         <button
                           onClick={() => handleDelete(booking)}
-                          disabled={updating === booking.id}
+                          disabled={updatingId === booking.id}
                           className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
                           title="Eliminar"
                         >
@@ -571,11 +439,11 @@ export default function BookingsListView({ onBookingChange, initialStatusFilter,
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <div className="text-xs text-primary font-medium mb-1">
-                    {ACCOMMODATIONS[booking.accommodation_id]}
+                    {ACCOMMODATION_MAP[booking.accommodation_id]}
                   </div>
                   <div className="font-semibold text-dark">{booking.primary_name}</div>
                 </div>
-                {getStatusBadge(booking.status)}
+                <StatusBadge status={booking.status} />
               </div>
               
               <div className="grid grid-cols-2 gap-2 text-sm mb-3">
@@ -608,17 +476,17 @@ export default function BookingsListView({ onBookingChange, initialStatusFilter,
                   <>
                     <button
                       onClick={() => handleQuickApprove(booking)}
-                      disabled={updating === booking.id}
+                      disabled={updatingId === booking.id}
                       className="flex-1 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:opacity-50"
                     >
-                      {updating === booking.id ? '...' : '✓ Aprovar'}
+                      {updatingId === booking.id ? '...' : '✓ Aprovar'}
                     </button>
                     <button
                       onClick={() => handleQuickReject(booking)}
-                      disabled={updating === booking.id}
+                      disabled={updatingId === booking.id}
                       className="flex-1 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 disabled:opacity-50"
                     >
-                      {updating === booking.id ? '...' : '✗ Rejeitar'}
+                      {updatingId === booking.id ? '...' : '✗ Rejeitar'}
                     </button>
                   </>
                 )}
@@ -644,6 +512,8 @@ export default function BookingsListView({ onBookingChange, initialStatusFilter,
           defaultDates={null}
           accommodationId={editingBooking?.accommodation_id || null}
           showAccommodationSelector={!editingBooking}
+          existingBookings={bookings}
+          blockedDates={blockedDates}
           onSave={handleSaveBooking}
           onDelete={editingBooking ? () => handleDelete(editingBooking) : undefined}
           onClose={() => {

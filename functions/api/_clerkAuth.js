@@ -128,3 +128,17 @@ export async function requireTeamOrAdmin(context) {
   const user = await verifyClerkSession(context.request, context.env);
   return (user && (user.role === 'admin' || user.role === 'team')) ? user : null;
 }
+
+/** Verify a Clerk token and return the payload */
+export async function verifyClerkToken(token, env) {
+  try {
+    const clerkDomain = env.CLERK_DOMAIN;
+    if (!clerkDomain) return null;
+    
+    const payload = await verifyJWT(token, clerkDomain);
+    return payload;
+  } catch (error) {
+    console.error('Token verification error:', error.message);
+    return null;
+  }
+}

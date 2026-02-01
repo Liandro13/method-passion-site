@@ -1,10 +1,5 @@
 import { useState } from 'react';
-
-const ACCOMMODATIONS = [
-  { id: 1, name: 'Esperança Terrace' },
-  { id: 2, name: 'Nattura Gerês Village' },
-  { id: 3, name: 'Douro & Sabor Escape' }
-];
+import { ACCOMMODATIONS } from '../constants';
 
 interface BlockedDateModalProps {
   showAccommodationSelector?: boolean;

@@ -1,11 +1,17 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { getBookings, getBlockedDates, createBooking, updateBooking, deleteBooking, createBlockedDate, deleteBlockedDate } from '../lib/api';
-import type { Booking, BlockedDate, CalendarEvent } from '../types';
+import { createBooking, updateBooking, deleteBooking, createBlockedDate, deleteBlockedDate } from '../lib/api';
+import type { Booking, CalendarEvent } from '../types';
 import BookingModal from './BookingModal';
 import BlockedDateModal from './BlockedDateModal';
+import StatusBadge from './ui/StatusBadge';
+import { STATUS_OPTIONS, PLATFORM_OPTIONS, STATUS_COLORS } from '../constants';
+import { formatDate } from '../utils/formatters';
+import { exportBookingsToCSV } from '../utils/exportCsv';
+import { useBookings } from '../hooks/useBookings';
+import { useBookingActions } from '../hooks/useBookingActions';
 
 interface AccommodationPanelProps {
   accommodationId: number;
@@ -13,31 +19,17 @@ interface AccommodationPanelProps {
   onBookingChange?: () => void;
 }
 
-const STATUS_OPTIONS = [
-  { value: '', label: 'Todos os estados' },
-  { value: 'confirmed', label: '🟢 Confirmado' },
-  { value: 'pending', label: '🟡 Pendente' },
-  { value: 'cancelled', label: '⚫ Cancelado' }
-];
-
-const PLATFORM_OPTIONS = [
-  { value: '', label: 'Todas as plataformas' },
-  { value: 'Airbnb', label: 'Airbnb' },
-  { value: 'Booking', label: 'Booking' },
-  { value: 'VRBO', label: 'VRBO' },
-  { value: 'Direto', label: 'Direto' }
-];
-
 export default function AccommodationPanel({ accommodationId, accommodationName, onBookingChange }: AccommodationPanelProps) {
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [blockedDates, setBlockedDates] = useState<BlockedDate[]>([]);
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Use centralized hooks
+  const { bookings, blockedDates, loading, reload } = useBookings({ accommodationId });
+  const { updatingId, handleQuickApprove, handleQuickReject } = useBookingActions({ 
+    onSuccess: () => { reload(); onBookingChange?.(); } 
+  });
+
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [showBlockedModal, setShowBlockedModal] = useState(false);
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
   const [selectedDates, setSelectedDates] = useState<{ start: string; end: string } | null>(null);
-  const [updating, setUpdating] = useState<number | null>(null);
 
   // Filtros
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,38 +39,12 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
   const [dateTo, setDateTo] = useState('');
   const [activeTab, setActiveTab] = useState<'calendar' | 'list'>('calendar');
 
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const [bookingsRes, blockedRes] = await Promise.all([
-        getBookings(accommodationId),
-        getBlockedDates(accommodationId)
-      ]);
-
-      if (bookingsRes.bookings) setBookings(bookingsRes.bookings);
-      if (blockedRes.blockedDates) setBlockedDates(blockedRes.blockedDates);
-    } catch (error) {
-      console.error('Error loading data:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [accommodationId]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
   // Convert data to calendar events
-  useEffect(() => {
+  const events = useMemo(() => {
     const calendarEvents: CalendarEvent[] = [];
 
     bookings.forEach(booking => {
-      const statusColors: Record<string, { bg: string; border: string }> = {
-        confirmed: { bg: '#22c55e', border: '#16a34a' },
-        pending: { bg: '#eab308', border: '#ca8a04' },
-        cancelled: { bg: '#6b7280', border: '#4b5563' }
-      };
-      const colors = statusColors[booking.status] || statusColors.pending;
+      const colors = STATUS_COLORS[booking.status] || STATUS_COLORS.pending;
       const statusLabel = booking.status === 'pending' ? ' ⏳' : 
                           booking.status === 'cancelled' ? ' ❌' : '';
 
@@ -112,7 +78,7 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
       });
     });
 
-    setEvents(calendarEvents);
+    return calendarEvents;
   }, [bookings, blockedDates]);
 
   // Filtrar reservas para a lista
@@ -163,7 +129,7 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
     } else if (type === 'blocked' && blockedId) {
       if (confirm('Remover este bloqueio?')) {
         deleteBlockedDate(blockedId).then(() => {
-          loadData();
+          reload();
           onBookingChange?.();
         });
       }
@@ -189,7 +155,7 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
           ...data
         });
       }
-      await loadData();
+      await reload();
       onBookingChange?.();
       setShowBookingModal(false);
       setEditingBooking(null);
@@ -203,7 +169,7 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
     if (confirm('Tem a certeza que deseja eliminar esta reserva?')) {
       try {
         await deleteBooking(id);
-        await loadData();
+        await reload();
         onBookingChange?.();
         setShowBookingModal(false);
         setEditingBooking(null);
@@ -213,40 +179,13 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
     }
   };
 
-  const handleQuickApprove = async (booking: Booking) => {
-    setUpdating(booking.id);
-    try {
-      await updateBooking(booking.id, { status: 'confirmed' });
-      await loadData();
-      onBookingChange?.();
-    } catch (error) {
-      console.error('Error approving booking:', error);
-    } finally {
-      setUpdating(null);
-    }
-  };
-
-  const handleQuickReject = async (booking: Booking) => {
-    if (!confirm('Tem certeza que deseja rejeitar esta reserva?')) return;
-    setUpdating(booking.id);
-    try {
-      await updateBooking(booking.id, { status: 'cancelled' });
-      await loadData();
-      onBookingChange?.();
-    } catch (error) {
-      console.error('Error rejecting booking:', error);
-    } finally {
-      setUpdating(null);
-    }
-  };
-
   const handleSaveBlocked = async (data: { start_date: string; end_date: string; reason?: string }) => {
     try {
       await createBlockedDate({
         accommodation_id: accommodationId,
         ...data
       });
-      await loadData();
+      await reload();
       onBookingChange?.();
       setShowBlockedModal(false);
     } catch (error) {
@@ -254,22 +193,7 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
     }
   };
 
-  const exportToCSV = () => {
-    const headers = ['ID', 'Hóspede', 'Check-in', 'Check-out', 'Hóspedes', 'Nacionalidade', 'Estado', 'Plataforma', 'Valor', 'Notas'];
-    const rows = filteredBookings.map(b => [
-      b.id, b.primary_name, b.check_in, b.check_out, b.guests, b.nationality,
-      b.status, b.plataforma || '', b.valor || '', (b.notes || '').replace(/"/g, '""')
-    ]);
-    const csvContent = [headers.join(','), ...rows.map(row => row.map(cell => `"${cell}"`).join(','))].join('\n');
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `reservas_${accommodationName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  const exportToCSV = () => exportBookingsToCSV(filteredBookings, `reservas_${accommodationName.replace(/\s+/g, '_')}`, false);
 
   const clearFilters = () => {
     setSearchQuery('');
@@ -280,18 +204,6 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
   };
 
   const hasActiveFilters = searchQuery || statusFilter || platformFilter || dateFrom || dateTo;
-
-  const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' });
-
-  const getStatusBadge = (status: string) => {
-    const styles: Record<string, string> = {
-      confirmed: 'bg-green-100 text-green-800',
-      pending: 'bg-yellow-100 text-yellow-800',
-      cancelled: 'bg-gray-100 text-gray-600'
-    };
-    const labels: Record<string, string> = { confirmed: '🟢 Confirmado', pending: '🟡 Pendente', cancelled: '⚫ Cancelado' };
-    return <span className={`px-2 py-1 text-xs rounded-full ${styles[status] || styles.pending}`}>{labels[status] || status}</span>;
-  };
 
   const pendingCount = bookings.filter(b => b.status === 'pending').length;
 
@@ -437,18 +349,18 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
                       <td className="px-4 py-3">{formatDate(booking.check_in)}</td>
                       <td className="px-4 py-3">{formatDate(booking.check_out)}</td>
                       <td className="px-4 py-3 text-center">{booking.guests}</td>
-                      <td className="px-4 py-3">{getStatusBadge(booking.status)}</td>
+                      <td className="px-4 py-3"><StatusBadge status={booking.status} /></td>
                       <td className="px-4 py-3 text-gray-600">{booking.plataforma || '-'}</td>
                       <td className="px-4 py-3 text-right font-medium">{booking.valor ? `€${booking.valor.toFixed(2)}` : '-'}</td>
                       <td className="px-4 py-3">
                         <div className="flex gap-1 justify-end">
                           {booking.status === 'pending' && (
                             <>
-                              <button onClick={() => handleQuickApprove(booking)} disabled={updating === booking.id} className="p-1.5 text-green-600 hover:bg-green-50 rounded" title="Aprovar">
-                                {updating === booking.id ? '...' : '✓'}
+                              <button onClick={() => handleQuickApprove(booking)} disabled={updatingId === booking.id} className="p-1.5 text-green-600 hover:bg-green-50 rounded" title="Aprovar">
+                                {updatingId === booking.id ? '...' : '✓'}
                               </button>
-                              <button onClick={() => handleQuickReject(booking)} disabled={updating === booking.id} className="p-1.5 text-red-600 hover:bg-red-50 rounded" title="Rejeitar">
-                                {updating === booking.id ? '...' : '✗'}
+                              <button onClick={() => handleQuickReject(booking)} disabled={updatingId === booking.id} className="p-1.5 text-red-600 hover:bg-red-50 rounded" title="Rejeitar">
+                                {updatingId === booking.id ? '...' : '✗'}
                               </button>
                             </>
                           )}
@@ -475,7 +387,7 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
                       <div className="font-semibold text-dark">{booking.primary_name}</div>
                       <div className="text-xs text-gray-500">{booking.nationality}</div>
                     </div>
-                    {getStatusBadge(booking.status)}
+                    <StatusBadge status={booking.status} />
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-sm my-3">
                     <div><span className="text-gray-500">Check-in:</span> <div className="font-medium">{formatDate(booking.check_in)}</div></div>
@@ -487,8 +399,8 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
                   <div className="flex gap-2 pt-3 border-t">
                     {booking.status === 'pending' && (
                       <>
-                        <button onClick={() => handleQuickApprove(booking)} disabled={updating === booking.id} className="flex-1 py-2 bg-green-600 text-white text-sm rounded-lg">{updating === booking.id ? '...' : '✓ Aprovar'}</button>
-                        <button onClick={() => handleQuickReject(booking)} disabled={updating === booking.id} className="flex-1 py-2 bg-red-600 text-white text-sm rounded-lg">{updating === booking.id ? '...' : '✗ Rejeitar'}</button>
+                        <button onClick={() => handleQuickApprove(booking)} disabled={updatingId === booking.id} className="flex-1 py-2 bg-green-600 text-white text-sm rounded-lg">{updatingId === booking.id ? '...' : '✓ Aprovar'}</button>
+                        <button onClick={() => handleQuickReject(booking)} disabled={updatingId === booking.id} className="flex-1 py-2 bg-red-600 text-white text-sm rounded-lg">{updatingId === booking.id ? '...' : '✗ Rejeitar'}</button>
                       </>
                     )}
                     <button onClick={() => { setEditingBooking(booking); setShowBookingModal(true); }} className="flex-1 py-2 bg-primary text-white text-sm rounded-lg">✏️ Editar</button>
@@ -506,6 +418,8 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
           booking={editingBooking}
           defaultDates={selectedDates}
           accommodationId={accommodationId}
+          existingBookings={bookings}
+          blockedDates={blockedDates}
           onSave={handleSaveBooking}
           onDelete={editingBooking ? () => handleDeleteBooking(editingBooking.id) : undefined}
           onClose={() => { setShowBookingModal(false); setEditingBooking(null); setSelectedDates(null); }}

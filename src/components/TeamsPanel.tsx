@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { ACCOMMODATIONS } from '../constants';
 
 interface TeamUser {
   id: number;
@@ -7,12 +8,6 @@ interface TeamUser {
   allowed_accommodations: string;
   created_at: string;
 }
-
-const ACCOMMODATIONS = [
-  { id: 1, name: 'Esperança Terrace' },
-  { id: 2, name: 'Nattura Gerês Village' },
-  { id: 3, name: 'Douro & Sabor Escape' }
-];
 
 export default function TeamsPanel() {
   const [users, setUsers] = useState<TeamUser[]>([]);

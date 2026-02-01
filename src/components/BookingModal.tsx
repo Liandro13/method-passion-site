@@ -1,17 +1,15 @@
 import { useState, useEffect, useMemo } from 'react';
-import type { Booking } from '../types';
-
-const ACCOMMODATIONS = [
-  { id: 1, name: 'Esperança Terrace' },
-  { id: 2, name: 'Nattura Gerês Village' },
-  { id: 3, name: 'Douro & Sabor Escape' }
-];
+import type { Booking, BlockedDate } from '../types';
+import { ACCOMMODATIONS } from '../constants';
+import { datesOverlap } from '../utils/formatters';
 
 interface BookingModalProps {
   booking: Booking | null;
   defaultDates: { start: string; end: string } | null;
   accommodationId?: number | null;
   showAccommodationSelector?: boolean;
+  existingBookings?: Booking[];
+  blockedDates?: BlockedDate[];
   onSave: (data: {
     check_in: string;
     check_out: string;
@@ -36,7 +34,7 @@ interface BookingModalProps {
   onClose: () => void;
 }
 
-export default function BookingModal({ booking, defaultDates, accommodationId, showAccommodationSelector, onSave, onDelete, onClose }: BookingModalProps) {
+export default function BookingModal({ booking, defaultDates, accommodationId, showAccommodationSelector, existingBookings = [], blockedDates = [], onSave, onDelete, onClose }: BookingModalProps) {
   const [selectedAccommodation, setSelectedAccommodation] = useState(accommodationId || 1);
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
@@ -55,6 +53,44 @@ export default function BookingModal({ booking, defaultDates, accommodationId, s
   const [iva, setIva] = useState<number>(0);
   const [plataforma, setPlataforma] = useState('');
   const [showFinancialError, setShowFinancialError] = useState(false);
+  const [availabilityError, setAvailabilityError] = useState<string | null>(null);
+
+  // Check availability for the selected accommodation
+  const checkAvailability = useMemo(() => {
+    if (!checkIn || !checkOut) return { available: true, message: null };
+    
+    const accId = selectedAccommodation;
+    
+    // Check against existing bookings (exclude current booking if editing)
+    const conflictingBooking = existingBookings.find(b => {
+      if (booking && b.id === booking.id) return false; // Skip current booking
+      if (b.accommodation_id !== accId) return false; // Different accommodation
+      if (b.status === 'cancelled') return false; // Ignore cancelled
+      return datesOverlap(checkIn, checkOut, b.check_in, b.check_out);
+    });
+    
+    if (conflictingBooking) {
+      return {
+        available: false,
+        message: `Conflito com reserva de ${conflictingBooking.primary_name} (${conflictingBooking.check_in} a ${conflictingBooking.check_out})`
+      };
+    }
+    
+    // Check against blocked dates
+    const conflictingBlock = blockedDates.find(b => {
+      if (b.accommodation_id !== accId) return false;
+      return datesOverlap(checkIn, checkOut, b.start_date, b.end_date);
+    });
+    
+    if (conflictingBlock) {
+      return {
+        available: false,
+        message: `Datas bloqueadas: ${conflictingBlock.reason || 'Indisponível'} (${conflictingBlock.start_date} a ${conflictingBlock.end_date})`
+      };
+    }
+    
+    return { available: true, message: null };
+  }, [checkIn, checkOut, selectedAccommodation, existingBookings, blockedDates, booking]);
 
   // Auto-calculated fields
   const valorSemComissoes = useMemo(() => {
@@ -95,6 +131,13 @@ export default function BookingModal({ booking, defaultDates, accommodationId, s
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate availability
+    if (!checkAvailability.available) {
+      setAvailabilityError(checkAvailability.message);
+      return;
+    }
+    setAvailabilityError(null);
     
     // Validate financial fields are required when confirming
     if (status === 'confirmed' && (!valor || valor <= 0 || !plataforma)) {
@@ -174,6 +217,29 @@ export default function BookingModal({ booking, defaultDates, accommodationId, s
               />
             </div>
           </div>
+
+          {/* Availability warning */}
+          {!checkAvailability.available && checkIn && checkOut && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start gap-2">
+              <span className="text-lg">⚠️</span>
+              <div>
+                <div className="font-medium">Datas indisponíveis</div>
+                <div className="text-sm">{checkAvailability.message}</div>
+              </div>
+            </div>
+          )}
+          
+          {availabilityError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg">
+              {availabilityError}
+            </div>
+          )}
+          
+          {checkAvailability.available && checkIn && checkOut && (
+            <div className="bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded-lg text-sm flex items-center gap-2">
+              <span>✓</span> Datas disponíveis
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>

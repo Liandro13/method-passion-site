@@ -6,3 +6,7 @@ pages_build_output_dir = "./dist"
 binding = "DB"
 database_name = "method-passion-db"
 database_id = "e82eee17-893b-462e-9586-8a87c7c52f0f"
+
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "method-passion-images"

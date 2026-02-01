@@ -6,8 +6,9 @@ import { getBookings } from '../lib/api';
 import AccommodationPanel from '../components/AccommodationPanel';
 import BookingsListView from '../components/BookingsListView';
 import TeamsPanel from '../components/TeamsPanel';
+import AccommodationManager from '../components/AccommodationManager';
 
-type ViewType = 'accommodation' | 'all-bookings' | 'teams';
+type ViewType = 'accommodation' | 'all-bookings' | 'teams' | 'manage-accommodations';
 
 const accommodations = [
   { id: 1, name: 'Esperança Terrace', shortName: 'Esperança' },
@@ -174,6 +175,17 @@ export default function Dashboard() {
               <span>👥</span>
               <span className="font-medium text-sm">Equipas</span>
             </button>
+            <button
+              onClick={() => setActiveView('manage-accommodations')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                activeView === 'manage-accommodations'
+                  ? 'bg-primary text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <span>🏡</span>
+              <span className="font-medium text-sm">Gerir Alojamentos</span>
+            </button>
           </nav>
         </aside>
 
@@ -261,6 +273,20 @@ export default function Dashboard() {
                   <span>👥</span>
                   <span className="font-medium">Equipas</span>
                 </button>
+                <button
+                  onClick={() => {
+                    setActiveView('manage-accommodations');
+                    setSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    activeView === 'manage-accommodations'
+                      ? 'bg-primary text-white'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  <span>🏡</span>
+                  <span className="font-medium">Gerir Alojamentos</span>
+                </button>
               </nav>
             </aside>
           </>
@@ -302,6 +328,7 @@ export default function Dashboard() {
             />
           )}
           {activeView === 'teams' && <TeamsPanel />}
+          {activeView === 'manage-accommodations' && <AccommodationManager />}
         </main>
       </div>
 
@@ -347,6 +374,15 @@ export default function Dashboard() {
           >
             <span className="text-lg">👥</span>
             <span className="text-[10px] mt-0.5">Equipas</span>
+          </button>
+          <button
+            onClick={() => setActiveView('manage-accommodations')}
+            className={`flex flex-col items-center py-2 px-2 rounded-lg transition-colors ${
+              activeView === 'manage-accommodations' ? 'text-primary' : 'text-gray-500'
+            }`}
+          >
+            <span className="text-lg">🏡</span>
+            <span className="text-[10px] mt-0.5">Gerir</span>
           </button>
         </div>
       </nav>

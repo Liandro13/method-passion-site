@@ -4,48 +4,24 @@ import { UserButton } from '@clerk/clerk-react';
 import { useAuth } from '../hooks/useAuth';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
+import { ACCOMMODATION_MAP, ACCOMMODATION_COLORS } from '../constants';
+import { formatDate } from '../utils/formatters';
+import type { Booking } from '../types';
 
-interface Booking {
-  id: number;
-  accommodation_id: number;
-  accommodation_name: string;
-  check_in: string;
-  check_out: string;
-  guests: number;
-  nationality: string;
-  primary_name: string;
-  additional_names?: string;
-  notes?: string;
-}
-
-interface CalendarEvent {
+interface TeamCalendarEvent {
   id: string;
   title: string;
   start: string;
   end: string;
   backgroundColor: string;
   borderColor: string;
-  extendedProps: {
-    booking: Booking;
-  };
+  extendedProps: { booking: Booking };
 }
-
-const ACCOMMODATION_COLORS: Record<number, { bg: string; border: string }> = {
-  1: { bg: '#3b82f6', border: '#2563eb' }, // blue - Esperança Terrace
-  2: { bg: '#22c55e', border: '#16a34a' }, // green - Nattura Gerês Village
-  3: { bg: '#a855f7', border: '#9333ea' }, // purple - Douro & Sabor Escape
-};
-
-const ACCOMMODATION_NAMES: Record<number, string> = {
-  1: 'Esperança Terrace',
-  2: 'Nattura Gerês Village',
-  3: 'Douro & Sabor Escape'
-};
 
 export default function TeamsDashboard() {
   const { isLoaded, role, name, allowedAccommodations } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [events, setEvents] = useState<TeamCalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
@@ -75,7 +51,7 @@ export default function TeamsDashboard() {
         if (result.bookings) {
           allBookings.push(...result.bookings.map((b: Booking) => ({
             ...b,
-            accommodation_name: ACCOMMODATION_NAMES[b.accommodation_id] || `Alojamento ${b.accommodation_id}`
+            accommodation_name: ACCOMMODATION_MAP[b.accommodation_id] || `Alojamento ${b.accommodation_id}`
           })));
         }
       }
@@ -83,7 +59,7 @@ export default function TeamsDashboard() {
       setBookings(allBookings);
       
       // Convert to calendar events
-      const calendarEvents: CalendarEvent[] = allBookings.map((booking: Booking) => {
+      const calendarEvents: TeamCalendarEvent[] = allBookings.map((booking: Booking) => {
         const colors = ACCOMMODATION_COLORS[booking.accommodation_id] || { bg: '#6b7280', border: '#4b5563' };
         return {
           id: `booking-${booking.id}`,
@@ -112,15 +88,6 @@ export default function TeamsDashboard() {
   const handleEventClick = (clickInfo: { event: { extendedProps: Record<string, unknown> } }) => {
     const booking = clickInfo.event.extendedProps.booking as Booking;
     if (booking) setSelectedBooking(booking);
-  };
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('pt-PT', {
-      weekday: 'short',
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
   };
 
   if (loading || !isLoaded) {

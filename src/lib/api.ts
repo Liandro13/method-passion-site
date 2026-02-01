@@ -143,3 +143,92 @@ export async function getAccommodations() {
   const response = await fetch(`${API_BASE}/accommodations`);
   return response.json();
 }
+
+// === Accommodation Management ===
+
+export async function updateAccommodation(id: number, data: {
+  name?: string;
+  description_pt?: string;
+  description_en?: string;
+  description_fr?: string;
+  description_de?: string;
+  description_es?: string;
+  max_guests?: number;
+  amenities?: Record<string, string[]>;
+}) {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_BASE}/accommodations`, {
+    method: 'PUT',
+    headers,
+    credentials: 'include',
+    body: JSON.stringify({ id, ...data })
+  });
+  return response.json();
+}
+
+// === Image Management ===
+
+export async function getAccommodationImages(accommodationId?: number) {
+  const url = accommodationId 
+    ? `${API_BASE}/images?accommodation_id=${accommodationId}`
+    : `${API_BASE}/images`;
+  const response = await fetch(url);
+  return response.json();
+}
+
+export async function uploadImage(file: File, accommodationId: number, caption?: string) {
+  const headers = await getAuthHeaders();
+  // Remove Content-Type to let browser set it for FormData
+  delete headers['Content-Type'];
+
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('accommodation_id', accommodationId.toString());
+  if (caption) {
+    formData.append('caption', caption);
+  }
+
+  const response = await fetch(`${API_BASE}/images`, {
+    method: 'POST',
+    headers,
+    credentials: 'include',
+    body: formData
+  });
+  return response.json();
+}
+
+export async function updateImage(id: number, data: {
+  display_order?: number;
+  caption?: string;
+  is_primary?: boolean;
+}) {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_BASE}/images`, {
+    method: 'PUT',
+    headers,
+    credentials: 'include',
+    body: JSON.stringify({ id, ...data })
+  });
+  return response.json();
+}
+
+export async function reorderImages(images: { id: number }[]) {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_BASE}/images`, {
+    method: 'PUT',
+    headers,
+    credentials: 'include',
+    body: JSON.stringify({ reorder: images })
+  });
+  return response.json();
+}
+
+export async function deleteImage(id: number) {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_BASE}/images?id=${id}`, {
+    method: 'DELETE',
+    headers,
+    credentials: 'include'
+  });
+  return response.json();
+}
