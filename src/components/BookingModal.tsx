@@ -244,40 +244,37 @@ export default function BookingModal({ booking, defaultDates, accommodationId, s
             />
           </div>
 
-          {/* Status selector - only shown when editing */}
-          {booking && (
-            <div>
-              <label className="block text-sm font-medium text-dark mb-1">Estado</label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value as 'pending' | 'confirmed' | 'cancelled')}
-                className="input-field"
-              >
-                <option value="pending">🟡 Pendente</option>
-                <option value="confirmed">🟢 Confirmado</option>
-                <option value="cancelled">⚫ Cancelado</option>
-              </select>
-            </div>
-          )}
+          {/* Status selector */}
+          <div>
+            <label className="block text-sm font-medium text-dark mb-1">Estado</label>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value as 'pending' | 'confirmed' | 'cancelled')}
+              className="input-field"
+            >
+              <option value="pending">🟡 Pendente</option>
+              <option value="confirmed">🟢 Confirmado</option>
+              <option value="cancelled">⚫ Cancelado</option>
+            </select>
+          </div>
 
-          {/* Financial fields - only shown when editing */}
-          {booking && (
-            <div className="border-t border-gray-200 pt-4 mt-4">
-              <h3 className="text-lg font-semibold text-dark mb-3">
-                Dados Financeiros
-                {status === 'confirmed' && <span className="text-red-500 text-sm ml-2">(obrigatório)</span>}
-              </h3>
-              
-              {showFinancialError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg mb-4">
-                  Para confirmar a reserva, preencha o valor e a plataforma.
-                </div>
-              )}
+          {/* Financial fields */}
+          <div className="border-t border-gray-200 pt-4 mt-4">
+            <h3 className="text-lg font-semibold text-dark mb-3">
+              Dados Financeiros
+              {status === 'confirmed' && <span className="text-red-500 text-sm ml-2">(obrigatório)</span>}
+            </h3>
+            
+            {showFinancialError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg mb-4">
+                Para confirmar a reserva, preencha o valor e a plataforma.
+              </div>
+            )}
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-dark mb-1">Valor Total (€) *</label>
-                  <input
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-dark mb-1">Valor Total (€) *</label>
+                <input
                     type="number"
                     step="0.01"
                     min="0"
@@ -369,7 +366,6 @@ export default function BookingModal({ booking, defaultDates, accommodationId, s
                 </div>
               </div>
             </div>
-          )}
 
           <div className="flex gap-3 pt-4">
             <button type="submit" className="btn-primary flex-1">
