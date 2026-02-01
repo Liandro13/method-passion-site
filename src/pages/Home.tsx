@@ -9,7 +9,7 @@ const accommodations = [
   {
     id: 1,
     name: 'Esperança Terrace',
-    image: '/images/esperança.jpeg',
+    image: '/images/esperanca.jpeg',
     maxGuests: 8
   },
   {
