@@ -3,14 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import { UserButton } from '@clerk/clerk-react';
 import { useAuth } from '../hooks/useAuth';
 import { getBookings } from '../lib/api';
-import CalendarView from '../components/CalendarView';
+import AccommodationPanel from '../components/AccommodationPanel';
 import BookingsListView from '../components/BookingsListView';
 import TeamsPanel from '../components/TeamsPanel';
 
-type ViewType = 'calendar' | 'bookings' | 'teams';
+type ViewType = 'accommodation' | 'all-bookings' | 'teams';
+
+const accommodations = [
+  { id: 1, name: 'Esperança Terrace', shortName: 'Esperança' },
+  { id: 2, name: 'Nattura Gerês Village', shortName: 'Nattura' },
+  { id: 3, name: 'Douro & Sabor Escape', shortName: 'Douro' }
+];
 
 export default function Dashboard() {
-  const [activeView, setActiveView] = useState<ViewType>('calendar');
+  const [activeView, setActiveView] = useState<ViewType>('accommodation');
+  const [activeAccommodation, setActiveAccommodation] = useState(0);
   const [pendingCount, setPendingCount] = useState(0);
   const [todayCheckIns, setTodayCheckIns] = useState(0);
   const [monthBookings, setMonthBookings] = useState(0);
@@ -70,12 +77,6 @@ export default function Dashboard() {
     );
   }
 
-  const navItems = [
-    { id: 'calendar' as ViewType, label: 'Calendário', icon: '📅' },
-    { id: 'bookings' as ViewType, label: 'Reservas', icon: '📋', badge: pendingCount > 0 ? pendingCount : undefined },
-    { id: 'teams' as ViewType, label: 'Equipas', icon: '👥' },
-  ];
-
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
@@ -114,29 +115,65 @@ export default function Dashboard() {
         {/* Sidebar Desktop */}
         <aside className="hidden lg:flex w-56 bg-white border-r border-gray-200 flex-col">
           <nav className="flex-1 p-4 space-y-1">
-            {navItems.map(item => (
+            {/* Alojamentos */}
+            <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-2">
+              Alojamentos
+            </div>
+            {accommodations.map((acc, index) => (
               <button
-                key={item.id}
-                onClick={() => setActiveView(item.id)}
-                className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
-                  activeView === item.id
+                key={acc.id}
+                onClick={() => {
+                  setActiveView('accommodation');
+                  setActiveAccommodation(index);
+                }}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  activeView === 'accommodation' && activeAccommodation === index
                     ? 'bg-primary text-white'
                     : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
-                <span className="flex items-center gap-3">
-                  <span>{item.icon}</span>
-                  <span className="font-medium">{item.label}</span>
-                </span>
-                {item.badge && (
-                  <span className={`px-2 py-0.5 text-xs rounded-full ${
-                    activeView === item.id ? 'bg-white/20 text-white' : 'bg-yellow-500 text-white'
-                  }`}>
-                    {item.badge}
-                  </span>
-                )}
+                <span>🏠</span>
+                <span className="font-medium text-sm">{acc.shortName}</span>
               </button>
             ))}
+
+            <div className="border-t border-gray-200 my-3" />
+
+            {/* Geral */}
+            <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-2">
+              Geral
+            </div>
+            <button
+              onClick={() => setActiveView('all-bookings')}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
+                activeView === 'all-bookings'
+                  ? 'bg-primary text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <span className="flex items-center gap-3">
+                <span>📋</span>
+                <span className="font-medium text-sm">Todas Reservas</span>
+              </span>
+              {pendingCount > 0 && (
+                <span className={`px-2 py-0.5 text-xs rounded-full ${
+                  activeView === 'all-bookings' ? 'bg-white/20 text-white' : 'bg-yellow-500 text-white'
+                }`}>
+                  {pendingCount}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveView('teams')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                activeView === 'teams'
+                  ? 'bg-primary text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <span>👥</span>
+              <span className="font-medium text-sm">Equipas</span>
+            </button>
           </nav>
         </aside>
 
@@ -158,32 +195,72 @@ export default function Dashboard() {
                 </button>
               </div>
               <nav className="p-4 space-y-1">
-                {navItems.map(item => (
+                {/* Alojamentos */}
+                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-2">
+                  Alojamentos
+                </div>
+                {accommodations.map((acc, index) => (
                   <button
-                    key={item.id}
+                    key={acc.id}
                     onClick={() => {
-                      setActiveView(item.id);
+                      setActiveView('accommodation');
+                      setActiveAccommodation(index);
                       setSidebarOpen(false);
                     }}
-                    className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
-                      activeView === item.id
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                      activeView === 'accommodation' && activeAccommodation === index
                         ? 'bg-primary text-white'
                         : 'text-gray-600 hover:bg-gray-100'
                     }`}
                   >
-                    <span className="flex items-center gap-3">
-                      <span>{item.icon}</span>
-                      <span className="font-medium">{item.label}</span>
-                    </span>
-                    {item.badge && (
-                      <span className={`px-2 py-0.5 text-xs rounded-full ${
-                        activeView === item.id ? 'bg-white/20 text-white' : 'bg-yellow-500 text-white'
-                      }`}>
-                        {item.badge}
-                      </span>
-                    )}
+                    <span>🏠</span>
+                    <span className="font-medium">{acc.shortName}</span>
                   </button>
                 ))}
+
+                <div className="border-t border-gray-200 my-3" />
+
+                {/* Geral */}
+                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-2">
+                  Geral
+                </div>
+                <button
+                  onClick={() => {
+                    setActiveView('all-bookings');
+                    setSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
+                    activeView === 'all-bookings'
+                      ? 'bg-primary text-white'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  <span className="flex items-center gap-3">
+                    <span>📋</span>
+                    <span className="font-medium">Todas Reservas</span>
+                  </span>
+                  {pendingCount > 0 && (
+                    <span className={`px-2 py-0.5 text-xs rounded-full ${
+                      activeView === 'all-bookings' ? 'bg-white/20 text-white' : 'bg-yellow-500 text-white'
+                    }`}>
+                      {pendingCount}
+                    </span>
+                  )}
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveView('teams');
+                    setSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    activeView === 'teams'
+                      ? 'bg-primary text-white'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  <span>👥</span>
+                  <span className="font-medium">Equipas</span>
+                </button>
               </nav>
             </aside>
           </>
@@ -199,7 +276,7 @@ export default function Dashboard() {
             </div>
             <div 
               className="bg-white rounded-xl shadow p-4 cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => setActiveView('bookings')}
+              onClick={() => setActiveView('all-bookings')}
             >
               <div className="text-2xl lg:text-3xl font-bold text-yellow-500">{pendingCount}</div>
               <div className="text-xs lg:text-sm text-gray-500">Pendentes</div>
@@ -211,8 +288,19 @@ export default function Dashboard() {
           </div>
 
           {/* Content */}
-          {activeView === 'calendar' && <CalendarView onBookingChange={handleBookingChange} />}
-          {activeView === 'bookings' && <BookingsListView onBookingChange={handleBookingChange} />}
+          {activeView === 'accommodation' && (
+            <AccommodationPanel
+              accommodationId={accommodations[activeAccommodation].id}
+              accommodationName={accommodations[activeAccommodation].name}
+              onBookingChange={handleBookingChange}
+            />
+          )}
+          {activeView === 'all-bookings' && (
+            <BookingsListView 
+              onBookingChange={handleBookingChange}
+              showAccommodationFilter={true}
+            />
+          )}
           {activeView === 'teams' && <TeamsPanel />}
         </main>
       </div>
@@ -220,23 +308,46 @@ export default function Dashboard() {
       {/* Bottom Navigation Mobile */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-20">
         <div className="flex justify-around py-2">
-          {navItems.map(item => (
+          {accommodations.map((acc, index) => (
             <button
-              key={item.id}
-              onClick={() => setActiveView(item.id)}
-              className={`flex flex-col items-center py-2 px-4 rounded-lg transition-colors relative ${
-                activeView === item.id ? 'text-primary' : 'text-gray-500'
+              key={acc.id}
+              onClick={() => {
+                setActiveView('accommodation');
+                setActiveAccommodation(index);
+              }}
+              className={`flex flex-col items-center py-2 px-2 rounded-lg transition-colors ${
+                activeView === 'accommodation' && activeAccommodation === index 
+                  ? 'text-primary' 
+                  : 'text-gray-500'
               }`}
             >
-              <span className="text-xl">{item.icon}</span>
-              <span className="text-xs mt-1">{item.label}</span>
-              {item.badge && (
-                <span className="absolute top-1 right-2 px-1.5 py-0.5 text-xs bg-yellow-500 text-white rounded-full min-w-[18px] text-center">
-                  {item.badge}
-                </span>
-              )}
+              <span className="text-lg">🏠</span>
+              <span className="text-[10px] mt-0.5">{acc.shortName}</span>
             </button>
           ))}
+          <button
+            onClick={() => setActiveView('all-bookings')}
+            className={`flex flex-col items-center py-2 px-2 rounded-lg transition-colors relative ${
+              activeView === 'all-bookings' ? 'text-primary' : 'text-gray-500'
+            }`}
+          >
+            <span className="text-lg">📋</span>
+            <span className="text-[10px] mt-0.5">Todas</span>
+            {pendingCount > 0 && (
+              <span className="absolute top-1 right-0 px-1 py-0.5 text-[8px] bg-yellow-500 text-white rounded-full min-w-[14px] text-center">
+                {pendingCount}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveView('teams')}
+            className={`flex flex-col items-center py-2 px-2 rounded-lg transition-colors ${
+              activeView === 'teams' ? 'text-primary' : 'text-gray-500'
+            }`}
+          >
+            <span className="text-lg">👥</span>
+            <span className="text-[10px] mt-0.5">Equipas</span>
+          </button>
         </div>
       </nav>
     </div>

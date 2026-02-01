@@ -27,9 +27,10 @@ const PLATFORM_OPTIONS = [
 interface BookingsListViewProps {
   onBookingChange?: () => void;
   initialStatusFilter?: string;
+  showAccommodationFilter?: boolean;
 }
 
-export default function BookingsListView({ onBookingChange, initialStatusFilter }: BookingsListViewProps) {
+export default function BookingsListView({ onBookingChange, initialStatusFilter, showAccommodationFilter = true }: BookingsListViewProps) {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<number | null>(null);
@@ -327,18 +328,20 @@ export default function BookingsListView({ onBookingChange, initialStatusFilter 
           </div>
 
           {/* Alojamento */}
-          <div>
-            <select
-              value={accommodationFilter}
-              onChange={(e) => setAccommodationFilter(e.target.value)}
-              className="input-field w-full"
-            >
-              <option value="">Todos os alojamentos</option>
-              {Object.entries(ACCOMMODATIONS).map(([id, name]) => (
-                <option key={id} value={id}>{name}</option>
-              ))}
-            </select>
-          </div>
+          {showAccommodationFilter && (
+            <div>
+              <select
+                value={accommodationFilter}
+                onChange={(e) => setAccommodationFilter(e.target.value)}
+                className="input-field w-full"
+              >
+                <option value="">Todos os alojamentos</option>
+                {Object.entries(ACCOMMODATIONS).map(([id, name]) => (
+                  <option key={id} value={id}>{name}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Plataforma */}
           <div>
