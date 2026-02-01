@@ -1,7 +1,17 @@
 import { useUser } from '@clerk/clerk-react';
 
-// Admin email - users with this email have full admin access
-const ADMIN_EMAILS = ['liandrodacruz@outlook.pt'];
+/**
+ * Roles are managed entirely in Clerk Dashboard via publicMetadata:
+ * 
+ * Admin (full access):
+ *   { "role": "admin" }
+ * 
+ * Team (limited access):
+ *   { "role": "team", "accommodations": [1, 2] }
+ * 
+ * Guest (no access):
+ *   No metadata or no role set
+ */
 
 export type UserRole = 'admin' | 'team' | 'guest';
 
@@ -45,40 +55,22 @@ export function useAuth(): AuthState {
   const email = user.primaryEmailAddress?.emailAddress || null;
   const name = user.fullName || user.firstName || email;
 
-  // Check if user is admin by email
-  const isAdmin = email && ADMIN_EMAILS.includes(email.toLowerCase());
-
-  // Get team metadata if not admin
+  // Role comes from Clerk Dashboard > Users > publicMetadata
   const metadata = user.publicMetadata as {
-    role?: string;
+    role?: 'admin' | 'team';
     accommodations?: number[];
   } | undefined;
 
-  const isTeam = !isAdmin && metadata?.role === 'team';
-  const allowedAccommodations = metadata?.accommodations || [];
+  const role: UserRole = metadata?.role || 'guest';
+  const accommodations = metadata?.accommodations || [];
 
   return {
     isLoaded: true,
     isSignedIn: true,
-    role: isAdmin ? 'admin' : isTeam ? 'team' : 'guest',
+    role,
     userId: user.id,
     email,
     name,
-    allowedAccommodations: isAdmin ? [1, 2, 3] : allowedAccommodations // Admin has access to all
-  };
-}
-
-export function useRequireAuth(requiredRole: 'admin' | 'team' | 'any' = 'any') {
-  const auth = useAuth();
-
-  const hasAccess = auth.isSignedIn && (
-    requiredRole === 'any' ||
-    (auth.role as UserRole) === 'admin' ||
-    (requiredRole === 'team' && ((auth.role as UserRole) === 'team' || (auth.role as UserRole) === 'admin'))
-  );
-
-  return {
-    ...auth,
-    hasAccess
+    allowedAccommodations: role === 'admin' ? [1, 2, 3] : accommodations
   };
 }

@@ -15,9 +15,13 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
   };
   
   if (getAuthToken) {
-    const token = await getAuthToken();
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+    try {
+      const token = await getAuthToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+    } catch {
+      // Ignore auth errors
     }
   }
   

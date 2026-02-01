@@ -18,11 +18,18 @@ export default function Header({ language, onLanguageChange }: HeaderProps) {
     <header className="bg-dark text-white shadow-lg">
       <div className="max-w-6xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-primary">
-              Method & Passion
-            </h1>
-            <p className="text-sm opacity-80 mt-1">Alojamento Local</p>
+          <div className="flex items-center gap-4">
+            <img 
+              src="/images/logo.jpeg" 
+              alt="Method & Passion Logo" 
+              className="h-12 w-12 rounded-full object-cover"
+            />
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-primary">
+                Method & Passion
+              </h1>
+              <p className="text-sm opacity-80 mt-1">Alojamento Local</p>
+            </div>
           </div>
           
           <div className="flex items-center gap-2">

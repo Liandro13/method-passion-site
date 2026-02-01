@@ -12,8 +12,13 @@ const corsHeaders = {
 // GET - List blocked dates
 export async function onRequestGet(context) {
   try {
-    const authError = await requireAdmin(context);
-    if (authError) return authError;
+    const user = await requireAdmin(context);
+    if (!user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
+        status: 401, 
+        headers: corsHeaders 
+      });
+    }
 
     const url = new URL(context.request.url);
     const accommodationId = url.searchParams.get('accommodation_id');
@@ -46,8 +51,13 @@ export async function onRequestGet(context) {
 // POST - Create blocked date
 export async function onRequestPost(context) {
   try {
-    const authError = await requireAdmin(context);
-    if (authError) return authError;
+    const user = await requireAdmin(context);
+    if (!user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
+        status: 401, 
+        headers: corsHeaders 
+      });
+    }
 
     const data = await context.request.json();
     const { accommodation_id, start_date, end_date, reason } = data;

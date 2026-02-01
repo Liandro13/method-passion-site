@@ -12,8 +12,13 @@ const corsHeaders = {
 // DELETE - Delete blocked date
 export async function onRequestDelete(context) {
   try {
-    const authError = await requireAdmin(context);
-    if (authError) return authError;
+    const user = await requireAdmin(context);
+    if (!user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { 
+        status: 401, 
+        headers: corsHeaders 
+      });
+    }
 
     const id = context.params.id;
     await context.env.DB.prepare('DELETE FROM blocked_dates WHERE id = ?')
