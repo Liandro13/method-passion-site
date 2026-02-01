@@ -1,11 +1,20 @@
 import { useState } from 'react';
 
+const ACCOMMODATIONS = [
+  { id: 1, name: 'Esperança Terrace' },
+  { id: 2, name: 'Nattura Gerês Village' },
+  { id: 3, name: 'Douro & Sabor Escape' }
+];
+
 interface BlockedDateModalProps {
-  onSave: (data: { start_date: string; end_date: string; reason?: string }) => void;
+  showAccommodationSelector?: boolean;
+  defaultAccommodationId?: number;
+  onSave: (data: { start_date: string; end_date: string; reason?: string; accommodation_id?: number }) => void;
   onClose: () => void;
 }
 
-export default function BlockedDateModal({ onSave, onClose }: BlockedDateModalProps) {
+export default function BlockedDateModal({ showAccommodationSelector, defaultAccommodationId, onSave, onClose }: BlockedDateModalProps) {
+  const [accommodationId, setAccommodationId] = useState(defaultAccommodationId || 1);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [reason, setReason] = useState('');
@@ -15,7 +24,8 @@ export default function BlockedDateModal({ onSave, onClose }: BlockedDateModalPr
     onSave({
       start_date: startDate,
       end_date: endDate,
-      reason: reason || undefined
+      reason: reason || undefined,
+      accommodation_id: accommodationId
     });
   };
 
@@ -27,6 +37,23 @@ export default function BlockedDateModal({ onSave, onClose }: BlockedDateModalPr
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Seletor de alojamento */}
+          {showAccommodationSelector && (
+            <div>
+              <label className="block text-sm font-medium text-dark mb-1">Alojamento *</label>
+              <select
+                value={accommodationId}
+                onChange={(e) => setAccommodationId(Number(e.target.value))}
+                className="input-field"
+                required
+              >
+                {ACCOMMODATIONS.map(acc => (
+                  <option key={acc.id} value={acc.id}>{acc.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-dark mb-1">Data Início *</label>

@@ -1,9 +1,17 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { Booking } from '../types';
 
+const ACCOMMODATIONS = [
+  { id: 1, name: 'Esperança Terrace' },
+  { id: 2, name: 'Nattura Gerês Village' },
+  { id: 3, name: 'Douro & Sabor Escape' }
+];
+
 interface BookingModalProps {
   booking: Booking | null;
   defaultDates: { start: string; end: string } | null;
+  accommodationId?: number | null;
+  showAccommodationSelector?: boolean;
   onSave: (data: {
     check_in: string;
     check_out: string;
@@ -13,6 +21,7 @@ interface BookingModalProps {
     additional_names?: string;
     notes?: string;
     status?: string;
+    accommodation_id?: number;
     // Financial fields
     valor?: number;
     imposto_municipal?: number;
@@ -27,7 +36,8 @@ interface BookingModalProps {
   onClose: () => void;
 }
 
-export default function BookingModal({ booking, defaultDates, onSave, onDelete, onClose }: BookingModalProps) {
+export default function BookingModal({ booking, defaultDates, accommodationId, showAccommodationSelector, onSave, onDelete, onClose }: BookingModalProps) {
+  const [selectedAccommodation, setSelectedAccommodation] = useState(accommodationId || 1);
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
   const [guests, setGuests] = useState(1);
@@ -57,6 +67,7 @@ export default function BookingModal({ booking, defaultDates, onSave, onDelete, 
 
   useEffect(() => {
     if (booking) {
+      setSelectedAccommodation(booking.accommodation_id);
       setCheckIn(booking.check_in);
       setCheckOut(booking.check_out);
       setGuests(booking.guests);
@@ -72,12 +83,15 @@ export default function BookingModal({ booking, defaultDates, onSave, onDelete, 
       setTaxaBancaria(booking.taxa_bancaria || 0);
       setIva(booking.iva || 0);
       setPlataforma(booking.plataforma || '');
-    } else if (defaultDates) {
-      setCheckIn(defaultDates.start);
-      setCheckOut(defaultDates.end);
+    } else {
+      if (accommodationId) setSelectedAccommodation(accommodationId);
+      if (defaultDates) {
+        setCheckIn(defaultDates.start);
+        setCheckOut(defaultDates.end);
+      }
       setStatus('pending');
     }
-  }, [booking, defaultDates]);
+  }, [booking, defaultDates, accommodationId]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,6 +112,7 @@ export default function BookingModal({ booking, defaultDates, onSave, onDelete, 
       additional_names: additionalNames,
       notes,
       status,
+      accommodation_id: selectedAccommodation,
       // Financial fields
       valor,
       imposto_municipal: impostoMunicipal,
@@ -120,6 +135,23 @@ export default function BookingModal({ booking, defaultDates, onSave, onDelete, 
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Seletor de alojamento (só para novas reservas) */}
+          {showAccommodationSelector && !booking && (
+            <div>
+              <label className="block text-sm font-medium text-dark mb-1">Alojamento *</label>
+              <select
+                value={selectedAccommodation}
+                onChange={(e) => setSelectedAccommodation(Number(e.target.value))}
+                className="input-field"
+                required
+              >
+                {ACCOMMODATIONS.map(acc => (
+                  <option key={acc.id} value={acc.id}>{acc.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-dark mb-1">Check-in *</label>

@@ -70,5 +70,6 @@ export interface CalendarEvent {
     bookingId?: number;
     blockedId?: number;
     status?: string;
+    accommodationId?: number;
   };
 }
