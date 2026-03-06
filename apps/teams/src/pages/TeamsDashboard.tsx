@@ -5,7 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import { getBookings } from '../hooks/useBookings';
 import TeamAccommodationPanel from '../components/TeamAccommodationPanel';
 import TeamBookingsListView from '../components/TeamBookingsListView';
-import { ACCOMMODATIONS } from '../constants';
+import { ACCOMMODATIONS } from '@method-passion/shared';
 
 type ViewType = 'accommodation' | 'all-bookings';
 

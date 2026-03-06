@@ -1,5 +1,5 @@
-import type { Booking } from '../types';
-import { formatDate } from '../utils/formatters';
+import type { Booking } from '@method-passion/shared';
+import { formatDate } from '@method-passion/shared';
 
 interface TeamBookingDetailModalProps {
   booking: Booking;

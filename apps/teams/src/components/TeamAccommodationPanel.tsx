@@ -1,11 +1,10 @@
 import { useState, useMemo } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
-import type { Booking, CalendarEvent } from '../types';
+import type { Booking, CalendarEvent } from '@method-passion/shared';
+import { STATUS_COLORS, formatDate } from '@method-passion/shared';
 import TeamBookingDetailModal from './TeamBookingDetailModal';
 import StatusBadge from './ui/StatusBadge';
-import { STATUS_COLORS } from '../constants';
-import { formatDate } from '../utils/formatters';
 import { useBookings } from '../hooks/useBookings';
 
 interface TeamAccommodationPanelProps {

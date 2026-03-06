@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth as useClerkAuth } from '@clerk/clerk-react';
-import type { Booking, BlockedDate } from '../types';
+import type { Booking, BlockedDate } from '@method-passion/shared';
 
 const API_BASE = '/api';
 

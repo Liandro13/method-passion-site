@@ -1,19 +1,19 @@
+// Reusable status badge component
+
+import { STATUS_COLORS, STATUS_LABELS } from '@method-passion/shared';
+
 interface StatusBadgeProps {
-  status: 'confirmed' | 'pending' | 'cancelled';
+  status: string;
+  className?: string;
 }
 
-const statusConfig = {
-  confirmed: { label: 'Confirmado', className: 'bg-green-100 text-green-800' },
-  pending: { label: 'Pendente', className: 'bg-yellow-100 text-yellow-800' },
-  cancelled: { label: 'Cancelado', className: 'bg-gray-100 text-gray-600' }
-};
-
-export default function StatusBadge({ status }: StatusBadgeProps) {
-  const config = statusConfig[status] || statusConfig.pending;
+export default function StatusBadge({ status, className = '' }: StatusBadgeProps) {
+  const colors = STATUS_COLORS[status] || STATUS_COLORS.pending;
+  const label = STATUS_LABELS[status] || status;
   
   return (
-    <span className={`px-2 py-1 text-xs font-medium rounded-full ${config.className}`}>
-      {config.label}
+    <span className={`px-2 py-1 text-xs font-medium rounded-full ${colors.badgeClass} ${className}`}>
+      {label}
     </span>
   );
 }

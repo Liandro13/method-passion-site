@@ -1,9 +1,8 @@
 import { useState, useMemo } from 'react';
-import type { Booking } from '../types';
+import type { Booking } from '@method-passion/shared';
+import { ACCOMMODATIONS, formatDate } from '@method-passion/shared';
 import TeamBookingDetailModal from './TeamBookingDetailModal';
 import StatusBadge from './ui/StatusBadge';
-import { ACCOMMODATIONS } from '../constants';
-import { formatDate } from '../utils/formatters';
 import { useBookings } from '../hooks/useBookings';
 
 interface TeamBookingsListViewProps {
