@@ -39,7 +39,15 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
   const [dateTo, setDateTo] = useState('');
   const [activeTab, setActiveTab] = useState<'calendar' | 'list'>('calendar');
 
+  // Helper to add days to a date string (YYYY-MM-DD)
+  const addDays = (dateStr: string, days: number): string => {
+    const date = new Date(dateStr);
+    date.setDate(date.getDate() + days);
+    return date.toISOString().split('T')[0];
+  };
+
   // Convert data to calendar events
+  // Note: FullCalendar uses EXCLUSIVE end dates, so we add +1 day to show the checkout/end day visually
   const events = useMemo(() => {
     const calendarEvents: CalendarEvent[] = [];
 
@@ -52,7 +60,8 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
         id: `booking-${booking.id}`,
         title: `${booking.primary_name}${statusLabel}`,
         start: booking.check_in,
-        end: booking.check_out,
+        // Add +1 day so checkout day is visually included (FullCalendar end is exclusive)
+        end: addDays(booking.check_out, 1),
         backgroundColor: colors.bg,
         borderColor: colors.border,
         extendedProps: {
@@ -68,7 +77,8 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
         id: `blocked-${blocked.id}`,
         title: `🚫 ${blocked.reason || 'Bloqueado'}`,
         start: blocked.start_date,
-        end: blocked.end_date,
+        // Add +1 day so last blocked day is visually included
+        end: addDays(blocked.end_date, 1),
         backgroundColor: '#ef4444',
         borderColor: '#dc2626',
         extendedProps: {
