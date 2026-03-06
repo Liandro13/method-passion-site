@@ -16,12 +16,6 @@ if [ -f ".env" ]; then
   cp .env apps/teams/.env 2>/dev/null || true
 fi
 
-# Build the shared package first
-echo "📦 Building shared package..."
-cd packages/shared
-npx tsc -b
-cd ../..
-
 # Build home app
 echo "🏠 Building home app..."
 npm run build --workspace=apps/home
