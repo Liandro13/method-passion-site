@@ -64,33 +64,36 @@ Reserva Criada → Pendente (Amarelo) → Aprovada (Verde) → Confirmada
 
 ```
 Method-Passion-Site/
-├── src/
-│   ├── components/          # Componentes React
-│   │   ├── AccommodationPanel.tsx   # Painel de alojamento com calendário
-│   │   ├── ApprovalsPanel.tsx       # Painel de aprovações
-│   │   ├── BookingModal.tsx         # Modal de criar/editar reserva
-│   │   ├── BlockedDateModal.tsx     # Modal de bloquear datas
-│   │   └── AuthProvider.tsx         # Provider de autenticação
-│   ├── pages/
-│   │   ├── Home.tsx          # Página pública
-│   │   ├── Admin.tsx         # Login admin
-│   │   ├── Dashboard.tsx     # Dashboard admin
-│   │   ├── TeamsLogin.tsx    # Login equipas
-│   │   └── TeamsDashboard.tsx # Dashboard equipas (só leitura)
-│   ├── hooks/
-│   │   └── useAuth.ts        # Hook de autenticação
-│   ├── lib/
-│   │   └── api.ts            # Cliente API
-│   └── types/
-│       └── index.ts          # Tipos TypeScript
+├── apps/
+│   ├── home/                # Website público (reservas)
+│   │   └── src/
+│   │       ├── components/   # BookingForm, AccommodationCard, etc.
+│   │       ├── pages/        # Home
+│   │       └── lib/          # i18n
+│   ├── admin/               # Dashboard admin
+│   │   └── src/
+│   │       ├── components/   # AccommodationPanel, BookingModal, etc.
+│   │       ├── pages/        # Dashboard
+│   │       ├── hooks/        # useBookings, useAuth
+│   │       └── lib/          # api.ts
+│   └── teams/               # Portal equipas (só leitura)
+│       └── src/
+│           ├── components/   # TeamAccommodationPanel, etc.
+│           ├── pages/        # TeamsDashboard
+│           └── hooks/        # useBookings, useAuth
+├── packages/
+│   └── shared/              # Código partilhado
+│       └── src/
+│           ├── types/        # Booking, BlockedDate, Accommodation, etc.
+│           ├── constants/    # ACCOMMODATIONS, STATUS_COLORS, etc.
+│           ├── api/          # getAccommodations, checkAvailability
+│           └── utils/        # formatDate, formatCurrency
 ├── functions/
 │   └── api/
-│       ├── _clerkAuth.js     # Verificação JWT do Clerk
-│       ├── bookings/         # CRUD de reservas
-│       ├── blocked-dates/    # CRUD de datas bloqueadas
-│       ├── accommodations/   # Lista de alojamentos
-│       └── check-availability/ # Verificar disponibilidade
+│       └── [[route]].ts     # Hono API (Cloudflare Workers)
 ├── migrations/               # Migrações SQL
+├── scripts/
+│   └── build.sh             # Build script (home + admin + teams)
 └── schema.sql               # Schema da base de dados
 ```
 
@@ -400,6 +403,13 @@ Se as roles não estiverem a funcionar após alteração:
 ---
 
 ## 📝 Changelog
+
+### v2.1.0 (Março 2026)
+- ✅ Reestruturação monorepo (apps/home, apps/admin, apps/teams)
+- ✅ Shared package para types, constants e utils
+- ✅ Remoção de código duplicado/morto
+- ✅ Simplificação TypeScript config (sem project references)
+- ✅ Correção visual do calendário (checkout day visível)
 
 ### v2.0.0 (Janeiro 2026)
 - ✅ Migração para Clerk SSO
