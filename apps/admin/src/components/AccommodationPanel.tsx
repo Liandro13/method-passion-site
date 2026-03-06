@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -30,6 +30,15 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
   const [selectedDates, setSelectedDates] = useState<{ start: string; end: string } | null>(null);
 
+  // Keep calendar on the same month after data reloads
+  const calendarRef = useRef<FullCalendar>(null);
+  const currentDateRef = useRef<Date>(new Date());
+  const handleDatesSet = useCallback((arg: { start: Date; end: Date }) => {
+    // The midpoint between start/end gives us the visible month
+    const mid = new Date((arg.start.getTime() + arg.end.getTime()) / 2);
+    currentDateRef.current = mid;
+  }, []);
+
   // Filtros
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -46,7 +55,10 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
   };
 
   // Convert data to calendar events
-  // Note: FullCalendar uses EXCLUSIVE end dates, so we add +1 day to show the checkout/end day visually
+  // Bookings use timed start/end to create half-bar visuals:
+  //   Check-in day starts at 15:00 (afternoon) → left half empty
+  //   Check-out day ends at 12:00 (noon) → right half empty
+  // This mimics hotel calendars where guests arrive PM and leave AM.
   const events = useMemo(() => {
     const calendarEvents: CalendarEvent[] = [];
 
@@ -58,9 +70,8 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
       calendarEvents.push({
         id: `booking-${booking.id}`,
         title: `${booking.primary_name}${statusLabel}`,
-        start: booking.check_in,
-        // Add +1 day so checkout day is visually included (FullCalendar end is exclusive)
-        end: addDays(booking.check_out, 1),
+        start: `${booking.check_in}T15:00:00`,
+        end: `${booking.check_out}T12:00:00`,
         backgroundColor: colors.bg,
         borderColor: colors.border,
         extendedProps: {
@@ -85,6 +96,12 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
           blockedId: blocked.id
         }
       });
+    });
+
+    // Restore calendar to the month the user was viewing
+    requestAnimationFrame(() => {
+      const api = calendarRef.current?.getApi();
+      if (api) api.gotoDate(currentDateRef.current);
     });
 
     return calendarEvents;
@@ -277,12 +294,14 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
             <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-500" /> Bloqueado</span>
           </div>
           <FullCalendar
+            ref={calendarRef}
             plugins={[dayGridPlugin, interactionPlugin]}
             initialView="dayGridMonth"
             events={events}
             selectable={true}
             select={handleDateSelect}
             eventClick={handleEventClick}
+            datesSet={handleDatesSet}
             headerToolbar={{
               left: 'prev,next today',
               center: 'title',
@@ -291,6 +310,7 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
             locale="pt"
             height="auto"
             eventDisplay="block"
+            nextDayThreshold="12:00:00"
           />
         </div>
       )}

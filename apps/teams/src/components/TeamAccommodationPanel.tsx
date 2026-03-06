@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import type { Booking, CalendarEvent } from '@method-passion/shared';
@@ -17,6 +17,14 @@ export default function TeamAccommodationPanel({ accommodationId, accommodationN
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [activeTab, setActiveTab] = useState<'calendar' | 'list'>('calendar');
 
+  // Keep calendar on the same month after data reloads
+  const calendarRef = useRef<FullCalendar>(null);
+  const currentDateRef = useRef<Date>(new Date());
+  const handleDatesSet = useCallback((arg: { start: Date; end: Date }) => {
+    const mid = new Date((arg.start.getTime() + arg.end.getTime()) / 2);
+    currentDateRef.current = mid;
+  }, []);
+
   // Filtros simples
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'upcoming' | 'past'>('upcoming');
@@ -29,7 +37,7 @@ export default function TeamAccommodationPanel({ accommodationId, accommodationN
   };
 
   // Convert data to calendar events
-  // Note: FullCalendar uses EXCLUSIVE end dates, so we add +1 day to show the checkout/end day visually
+  // Bookings use timed start/end to create half-bar visuals (hotel-style)
   const events = useMemo(() => {
     const calendarEvents: CalendarEvent[] = [];
 
@@ -40,9 +48,8 @@ export default function TeamAccommodationPanel({ accommodationId, accommodationN
       calendarEvents.push({
         id: `booking-${booking.id}`,
         title: booking.primary_name,
-        start: booking.check_in,
-        // Add +1 day so checkout day is visually included (FullCalendar end is exclusive)
-        end: addDays(booking.check_out, 1),
+        start: `${booking.check_in}T15:00:00`,
+        end: `${booking.check_out}T12:00:00`,
         backgroundColor: colors.bg,
         borderColor: colors.border,
         extendedProps: {
@@ -67,6 +74,12 @@ export default function TeamAccommodationPanel({ accommodationId, accommodationN
           blockedId: blocked.id
         }
       });
+    });
+
+    // Restore calendar to the month the user was viewing
+    requestAnimationFrame(() => {
+      const api = calendarRef.current?.getApi();
+      if (api) api.gotoDate(currentDateRef.current);
     });
 
     return calendarEvents;
@@ -165,10 +178,12 @@ export default function TeamAccommodationPanel({ accommodationId, accommodationN
             <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-500" /> Bloqueado</span>
           </div>
           <FullCalendar
+            ref={calendarRef}
             plugins={[dayGridPlugin]}
             initialView="dayGridMonth"
             events={events}
             eventClick={handleEventClick}
+            datesSet={handleDatesSet}
             headerToolbar={{
               left: 'prev,next today',
               center: 'title',
@@ -177,6 +192,7 @@ export default function TeamAccommodationPanel({ accommodationId, accommodationN
             locale="pt"
             height="auto"
             eventDisplay="block"
+            nextDayThreshold="12:00:00"
           />
         </div>
       )}

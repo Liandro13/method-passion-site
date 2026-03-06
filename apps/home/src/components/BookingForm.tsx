@@ -237,7 +237,7 @@ export default function BookingForm({
             value={primaryName}
             onChange={(e) => setPrimaryName(e.target.value)}
             className="input-field"
-            placeholder="John Doe"
+            placeholder="Nome completo"
             required
           />
         </div>
@@ -254,7 +254,7 @@ export default function BookingForm({
                 value={name}
                 onChange={(e) => updateName(index, e.target.value)}
                 className="input-field flex-1"
-                placeholder="Name"
+                placeholder="Nome completo"
               />
               <button
                 type="button"
