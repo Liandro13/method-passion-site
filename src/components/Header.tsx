@@ -20,7 +20,7 @@ export default function Header({ language, onLanguageChange }: HeaderProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <img 
-              src="/images/logo.jpeg" 
+              src="/vite.svg" 
               alt="Method & Passion Logo" 
               className="h-12 w-12 rounded-full object-cover"
             />

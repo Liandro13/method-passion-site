@@ -15,6 +15,7 @@ export default {
         background: '#f5f1eb',
         dark: '#1a1311',
         accent: '#2c2420',
+        beige: '#f5f1eb',
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],

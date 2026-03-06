@@ -1,96 +1,74 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserButton } from '@clerk/clerk-react';
+import { UserButton, useAuth as useClerkAuth } from '@clerk/clerk-react';
 import { useAuth } from '../hooks/useAuth';
-import FullCalendar from '@fullcalendar/react';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import { ACCOMMODATION_MAP, ACCOMMODATION_COLORS } from '../constants';
-import { formatDate } from '../utils/formatters';
-import type { Booking } from '../types';
+import { getBookings } from '../lib/api';
+import TeamAccommodationPanel from '../components/TeamAccommodationPanel';
+import TeamBookingsListView from '../components/TeamBookingsListView';
 
-interface TeamCalendarEvent {
-  id: string;
-  title: string;
-  start: string;
-  end: string;
-  backgroundColor: string;
-  borderColor: string;
-  extendedProps: { booking: Booking };
-}
+type ViewType = 'accommodation' | 'all-bookings';
+
+const allAccommodations = [
+  { id: 1, name: 'Esperança Terrace', shortName: 'Esperança' },
+  { id: 2, name: 'Nattura Gerês Village', shortName: 'Nattura' },
+  { id: 3, name: 'Douro & Sabor Escape', shortName: 'Douro' }
+];
 
 export default function TeamsDashboard() {
+  const [activeView, setActiveView] = useState<ViewType>('accommodation');
+  const [activeAccommodationIndex, setActiveAccommodationIndex] = useState(0);
+  const [todayCheckIns, setTodayCheckIns] = useState(0);
+  const [monthBookings, setMonthBookings] = useState(0);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { isLoaded, role, name, allowedAccommodations } = useAuth();
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [events, setEvents] = useState<TeamCalendarEvent[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
-  const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+  const { isSignedIn } = useClerkAuth();
   const navigate = useNavigate();
 
-  // Check access
+  // Filter accommodations to only show allowed ones
+  const accommodations = allAccommodations.filter(acc => allowedAccommodations.includes(acc.id));
+
+  // Check role and redirect if not team or admin
   useEffect(() => {
     if (isLoaded && role !== 'team' && role !== 'admin') {
       navigate('/teams');
     }
   }, [isLoaded, role, navigate]);
 
-  const loadBookings = useCallback(async () => {
-    if (!allowedAccommodations.length) {
-      setLoading(false);
-      return;
-    }
+  // Load stats (only counts, no financial data)
+  const loadStats = useCallback(async () => {
+    if (!isLoaded || !isSignedIn || (role !== 'team' && role !== 'admin')) return;
 
     try {
-      // Fetch bookings for each allowed accommodation
-      const allBookings: Booking[] = [];
-      
-      for (const accId of allowedAccommodations) {
-        const response = await fetch(`/api/bookings?accommodation_id=${accId}&status=confirmed`);
-        const result = await response.json();
+      const result = await getBookings();
+      if (result.bookings) {
+        const bookings = result.bookings;
+        const today = new Date().toISOString().split('T')[0];
+        const currentMonth = new Date().toISOString().slice(0, 7);
+
+        // Check-ins hoje (apenas confirmados e dos alojamentos permitidos)
+        setTodayCheckIns(bookings.filter((b: { check_in: string; status: string; accommodation_id: number }) => 
+          b.check_in === today && 
+          b.status === 'confirmed' &&
+          allowedAccommodations.includes(b.accommodation_id)
+        ).length);
         
-        if (result.bookings) {
-          allBookings.push(...result.bookings.map((b: Booking) => ({
-            ...b,
-            accommodation_name: ACCOMMODATION_MAP[b.accommodation_id] || `Alojamento ${b.accommodation_id}`
-          })));
-        }
+        // Reservas do mês (confirmadas e dos alojamentos permitidos)
+        setMonthBookings(bookings.filter((b: { check_in: string; status: string; accommodation_id: number }) => 
+          b.check_in.startsWith(currentMonth) && 
+          b.status === 'confirmed' &&
+          allowedAccommodations.includes(b.accommodation_id)
+        ).length);
       }
-      
-      setBookings(allBookings);
-      
-      // Convert to calendar events
-      const calendarEvents: TeamCalendarEvent[] = allBookings.map((booking: Booking) => {
-        const colors = ACCOMMODATION_COLORS[booking.accommodation_id] || { bg: '#6b7280', border: '#4b5563' };
-        return {
-          id: `booking-${booking.id}`,
-          title: booking.primary_name,
-          start: booking.check_in,
-          end: booking.check_out,
-          backgroundColor: colors.bg,
-          borderColor: colors.border,
-          extendedProps: { booking }
-        };
-      });
-      setEvents(calendarEvents);
     } catch (error) {
-      console.error('Error loading bookings:', error);
-    } finally {
-      setLoading(false);
+      console.error('Error loading stats:', error);
     }
-  }, [allowedAccommodations]);
+  }, [isLoaded, isSignedIn, role, allowedAccommodations]);
 
   useEffect(() => {
-    if (isLoaded && (role === 'team' || role === 'admin')) {
-      loadBookings();
-    }
-  }, [isLoaded, role, loadBookings]);
+    if (isSignedIn) loadStats();
+  }, [loadStats, isSignedIn]);
 
-  const handleEventClick = (clickInfo: { event: { extendedProps: Record<string, unknown> } }) => {
-    const booking = clickInfo.event.extendedProps.booking as Booking;
-    if (booking) setSelectedBooking(booking);
-  };
-
-  if (loading || !isLoaded) {
+  if (!isLoaded || (role !== 'team' && role !== 'admin')) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-dark">A carregar...</div>
@@ -98,197 +76,252 @@ export default function TeamsDashboard() {
     );
   }
 
+  if (accommodations.length === 0) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        {/* Header */}
+        <header className="bg-dark text-white shadow-lg z-20">
+          <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <img 
+                src="/vite.svg" 
+                alt="Logo" 
+                className="h-10 w-10 rounded-full object-cover"
+              />
+              <div>
+                <h1 className="text-lg font-bold">Method & Passion</h1>
+                <p className="text-xs opacity-80">Portal de Equipas</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-sm opacity-80 hidden sm:block">{name}</span>
+              <UserButton afterSignOutUrl="/teams" />
+            </div>
+          </div>
+        </header>
+
+        <div className="flex-1 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-lg p-8 text-center max-w-md">
+            <div className="text-6xl mb-4">🔒</div>
+            <h2 className="text-xl font-semibold text-dark mb-2">Sem Acesso a Alojamentos</h2>
+            <p className="text-gray-600">
+              Não tens alojamentos atribuídos à tua conta. 
+              Contacta o administrador para configurar o acesso.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const currentAccommodation = accommodations[activeAccommodationIndex] || accommodations[0];
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="bg-dark text-white py-4 px-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-bold">Method & Passion</h1>
-            <p className="text-sm opacity-80">Olá, {name}</p>
+      <header className="bg-dark text-white shadow-lg z-20">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            {/* Botão hamburger mobile */}
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="lg:hidden p-2 hover:bg-white/10 rounded-lg transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <div className="flex items-center gap-3">
+              <img 
+                src="/vite.svg" 
+                alt="Logo" 
+                className="h-10 w-10 rounded-full object-cover"
+              />
+              <div>
+                <h1 className="text-lg font-bold">Method & Passion</h1>
+                <p className="text-xs opacity-80">Portal de Equipas</p>
+              </div>
+            </div>
           </div>
-          <UserButton afterSignOutUrl="/teams" />
+          <div className="flex items-center gap-4">
+            <span className="text-sm opacity-80 hidden sm:block">{name}</span>
+            <UserButton afterSignOutUrl="/teams" />
+          </div>
         </div>
       </header>
 
-      {/* View Toggle */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 py-2 flex gap-2">
-          <button
-            onClick={() => setViewMode('calendar')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              viewMode === 'calendar'
-                ? 'bg-primary text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            📅 Calendário
-          </button>
-          <button
-            onClick={() => setViewMode('list')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              viewMode === 'list'
-                ? 'bg-primary text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            📋 Lista
-          </button>
-        </div>
+      <div className="flex-1 flex">
+        {/* Sidebar Desktop */}
+        <aside className="hidden lg:flex w-56 bg-white border-r border-gray-200 flex-col">
+          <nav className="flex-1 p-4 space-y-1">
+            {/* Alojamentos */}
+            <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-2">
+              Alojamentos
+            </div>
+            {accommodations.map((acc, index) => (
+              <button
+                key={acc.id}
+                onClick={() => {
+                  setActiveView('accommodation');
+                  setActiveAccommodationIndex(index);
+                }}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  activeView === 'accommodation' && activeAccommodationIndex === index
+                    ? 'bg-primary text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <span>🏠</span>
+                <span className="font-medium text-sm">{acc.shortName}</span>
+              </button>
+            ))}
+
+            <div className="border-t border-gray-200 my-3" />
+
+            {/* Geral */}
+            <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-2">
+              Geral
+            </div>
+            <button
+              onClick={() => setActiveView('all-bookings')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                activeView === 'all-bookings'
+                  ? 'bg-primary text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <span>📋</span>
+              <span className="font-medium text-sm">Todas Reservas</span>
+            </button>
+          </nav>
+        </aside>
+
+        {/* Sidebar Mobile (overlay) */}
+        {sidebarOpen && (
+          <>
+            <div 
+              className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+              onClick={() => setSidebarOpen(false)}
+            />
+            <aside className="fixed left-0 top-0 bottom-0 w-64 bg-white z-40 lg:hidden shadow-xl">
+              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                <span className="font-semibold text-dark">Menu</span>
+                <button 
+                  onClick={() => setSidebarOpen(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg"
+                >
+                  ✕
+                </button>
+              </div>
+              <nav className="p-4 space-y-1">
+                {/* Alojamentos */}
+                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-2">
+                  Alojamentos
+                </div>
+                {accommodations.map((acc, index) => (
+                  <button
+                    key={acc.id}
+                    onClick={() => {
+                      setActiveView('accommodation');
+                      setActiveAccommodationIndex(index);
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                      activeView === 'accommodation' && activeAccommodationIndex === index
+                        ? 'bg-primary text-white'
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    <span>🏠</span>
+                    <span className="font-medium">{acc.shortName}</span>
+                  </button>
+                ))}
+
+                <div className="border-t border-gray-200 my-3" />
+
+                {/* Geral */}
+                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 py-2">
+                  Geral
+                </div>
+                <button
+                  onClick={() => {
+                    setActiveView('all-bookings');
+                    setSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    activeView === 'all-bookings'
+                      ? 'bg-primary text-white'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  <span>📋</span>
+                  <span className="font-medium">Todas Reservas</span>
+                </button>
+              </nav>
+            </aside>
+          </>
+        )}
+
+        {/* Main Content */}
+        <main className="flex-1 p-4 lg:p-6 overflow-auto pb-20 lg:pb-6">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 gap-3 lg:gap-4 mb-6">
+            <div className="bg-white rounded-xl shadow p-4">
+              <div className="text-2xl lg:text-3xl font-bold text-primary">{todayCheckIns}</div>
+              <div className="text-xs lg:text-sm text-gray-500">Check-ins hoje</div>
+            </div>
+            <div className="bg-white rounded-xl shadow p-4">
+              <div className="text-2xl lg:text-3xl font-bold text-green-600">{monthBookings}</div>
+              <div className="text-xs lg:text-sm text-gray-500">Reservas este mês</div>
+            </div>
+          </div>
+
+          {/* Content */}
+          {activeView === 'accommodation' && currentAccommodation && (
+            <TeamAccommodationPanel
+              accommodationId={currentAccommodation.id}
+              accommodationName={currentAccommodation.name}
+            />
+          )}
+          {activeView === 'all-bookings' && (
+            <TeamBookingsListView 
+              allowedAccommodations={allowedAccommodations}
+            />
+          )}
+        </main>
       </div>
 
-      {/* Main Content */}
-      <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-4">
-        {bookings.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-            <div className="text-6xl mb-4">📭</div>
-            <h3 className="text-xl font-semibold text-dark mb-2">Sem reservas</h3>
-            <p className="text-gray-500">Não há reservas confirmadas para os seus alojamentos.</p>
-          </div>
-        ) : viewMode === 'calendar' ? (
-          <div className="bg-white rounded-xl shadow-lg p-4 overflow-hidden">
-            <FullCalendar
-              plugins={[dayGridPlugin]}
-              initialView="dayGridMonth"
-              events={events}
-              eventClick={handleEventClick}
-              headerToolbar={{
-                left: 'prev,next',
-                center: 'title',
-                right: 'today'
+      {/* Bottom Navigation Mobile */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-20">
+        <div className="flex justify-around py-2">
+          {accommodations.map((acc, index) => (
+            <button
+              key={acc.id}
+              onClick={() => {
+                setActiveView('accommodation');
+                setActiveAccommodationIndex(index);
               }}
-              locale="pt"
-              height="auto"
-              eventDisplay="block"
-            />
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {bookings.map((booking) => (
-              <div
-                key={booking.id}
-                onClick={() => setSelectedBooking(booking)}
-                className="bg-white rounded-xl shadow-lg p-4 cursor-pointer hover:shadow-xl transition-shadow"
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <span
-                      className="inline-block px-2 py-1 rounded text-xs font-medium text-white mb-2"
-                      style={{ backgroundColor: ACCOMMODATION_COLORS[booking.accommodation_id]?.bg || '#6b7280' }}
-                    >
-                      {booking.accommodation_name}
-                    </span>
-                    <div className="font-semibold text-dark">{booking.primary_name}</div>
-                  </div>
-                  <div className="text-right text-sm">
-                    <div className="font-medium text-dark">{booking.guests} hóspedes</div>
-                    <div className="text-gray-500">{booking.nationality}</div>
-                  </div>
-                </div>
-                <div className="text-sm text-gray-600">
-                  {formatDate(booking.check_in)} → {formatDate(booking.check_out)}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </main>
-
-      {/* Booking Detail Modal */}
-      {selectedBooking && (
-        <div className="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-50">
-          <div className="bg-white rounded-t-xl md:rounded-xl shadow-xl w-full md:max-w-md max-h-[80vh] overflow-y-auto">
-            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-dark">Detalhes da Reserva</h2>
-              <button
-                onClick={() => setSelectedBooking(null)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="p-4 space-y-4">
-              <div
-                className="inline-block px-3 py-1 rounded text-sm font-medium text-white"
-                style={{ backgroundColor: ACCOMMODATION_COLORS[selectedBooking.accommodation_id]?.bg || '#6b7280' }}
-              >
-                {selectedBooking.accommodation_name}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-xs text-gray-500 uppercase mb-1">Check-in</div>
-                  <div className="font-medium text-dark">{formatDate(selectedBooking.check_in)}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-gray-500 uppercase mb-1">Check-out</div>
-                  <div className="font-medium text-dark">{formatDate(selectedBooking.check_out)}</div>
-                </div>
-              </div>
-
-              <div>
-                <div className="text-xs text-gray-500 uppercase mb-1">Responsável</div>
-                <div className="font-medium text-dark text-lg">{selectedBooking.primary_name}</div>
-              </div>
-
-              {selectedBooking.additional_names && (
-                <div>
-                  <div className="text-xs text-gray-500 uppercase mb-1">Outros Hóspedes</div>
-                  <div className="text-dark">{selectedBooking.additional_names}</div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-xs text-gray-500 uppercase mb-1">Nº Hóspedes</div>
-                  <div className="font-medium text-dark">{selectedBooking.guests}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-gray-500 uppercase mb-1">Nacionalidade</div>
-                  <div className="font-medium text-dark">{selectedBooking.nationality}</div>
-                </div>
-              </div>
-
-              {selectedBooking.notes && (
-                <div>
-                  <div className="text-xs text-gray-500 uppercase mb-1">Notas</div>
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-dark">
-                    {selectedBooking.notes}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="p-4 border-t border-gray-200">
-              <button
-                onClick={() => setSelectedBooking(null)}
-                className="w-full py-3 bg-gray-200 text-dark rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                Fechar
-              </button>
-            </div>
-          </div>
+              className={`flex flex-col items-center py-2 px-2 rounded-lg transition-colors ${
+                activeView === 'accommodation' && activeAccommodationIndex === index 
+                  ? 'text-primary' 
+                  : 'text-gray-500'
+              }`}
+            >
+              <span className="text-lg">🏠</span>
+              <span className="text-[10px] mt-0.5">{acc.shortName}</span>
+            </button>
+          ))}
+          <button
+            onClick={() => setActiveView('all-bookings')}
+            className={`flex flex-col items-center py-2 px-2 rounded-lg transition-colors ${
+              activeView === 'all-bookings' ? 'text-primary' : 'text-gray-500'
+            }`}
+          >
+            <span className="text-lg">📋</span>
+            <span className="text-[10px] mt-0.5">Todas</span>
+          </button>
         </div>
-      )}
-
-      {/* Legend */}
-      <footer className="bg-white border-t border-gray-200 py-3 px-4">
-        <div className="max-w-4xl mx-auto flex flex-wrap gap-4 justify-center text-sm">
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded" style={{ backgroundColor: ACCOMMODATION_COLORS[1].bg }} />
-            <span className="text-gray-600">Esperança Terrace</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded" style={{ backgroundColor: ACCOMMODATION_COLORS[2].bg }} />
-            <span className="text-gray-600">Nattura Gerês Village</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded" style={{ backgroundColor: ACCOMMODATION_COLORS[3].bg }} />
-            <span className="text-gray-600">Douro & Sabor Escape</span>
-          </div>
-        </div>
-      </footer>
+      </nav>
     </div>
   );
 }

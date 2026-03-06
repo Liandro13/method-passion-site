@@ -1,0 +1,89 @@
+name: Daily Backup
+
+on:
+  schedule:
+    # Run at 22:00 UTC (23:00 Portugal winter time)
+    # and 21:00 UTC (23:00 Portugal summer time)
+    # We'll use 22:00 UTC and check in the script if we should run
+    - cron: '0 22 * * *'
+    - cron: '0 21 * * *'
+  workflow_dispatch:
+    # Allow manual trigger from GitHub UI
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if should run based on Portugal timezone
+        id: check-time
+        run: |
+          # Get current month and day
+          MONTH=$(date -u +%m)
+          DAY=$(date -u +%d)
+          HOUR=$(date -u +%H)
+          DOW=$(date -u +%w)  # 0=Sunday
+          
+          # Calculate last Sunday of March
+          # March is month 03, has 31 days
+          # Calculate last Sunday of October
+          # October is month 10, has 31 days
+          
+          # Simplified: Portugal is in summer time from last Sunday of March to last Sunday of October
+          # March: months 04-10 are summer time (approximately)
+          # More precise: we check if current date is in summer period
+          
+          # For March: last Sunday is between 25-31
+          # For October: last Sunday is between 25-31
+          
+          SHOULD_RUN="false"
+          
+          # Summer time (April to October): run at 21:00 UTC = 23:00 WEST
+          if [ "$MONTH" -ge "04" ] && [ "$MONTH" -le "10" ]; then
+            if [ "$HOUR" = "21" ]; then
+              SHOULD_RUN="true"
+              echo "Summer time detected, running at 21:00 UTC"
+            fi
+          # Winter time (November to March): run at 22:00 UTC = 23:00 WET
+          else
+            if [ "$HOUR" = "22" ]; then
+              SHOULD_RUN="true"
+              echo "Winter time detected, running at 22:00 UTC"
+            fi
+          fi
+          
+          # Always run if manually triggered
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            SHOULD_RUN="true"
+            echo "Manual trigger, running backup"
+          fi
+          
+          echo "should_run=$SHOULD_RUN" >> $GITHUB_OUTPUT
+
+      - name: Trigger backup endpoint
+        if: steps.check-time.outputs.should_run == 'true'
+        run: |
+          echo "Triggering backup at $(date -u)"
+          
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "${{ secrets.SITE_URL }}/api/admin/backup/send" \
+            -H "X-Cron-Secret: ${{ secrets.BACKUP_SECRET }}" \
+            -H "Content-Type: application/json")
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          
+          echo "Response code: $HTTP_CODE"
+          echo "Response body: $BODY"
+          
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::Backup failed with status $HTTP_CODE"
+            exit 1
+          fi
+          
+          echo "✅ Backup completed successfully"
+
+      - name: Skip notification
+        if: steps.check-time.outputs.should_run == 'false'
+        run: |
+          echo "Skipping backup - wrong time slot for current timezone"
+          echo "Current UTC hour: $(date -u +%H)"

@@ -17,12 +17,15 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
   if (getAuthToken) {
     try {
       const token = await getAuthToken();
+      console.log('[API] Token obtained:', token ? 'yes (' + token.substring(0, 20) + '...)' : 'no');
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
-    } catch {
-      // Ignore auth errors
+    } catch (e) {
+      console.error('[API] Token error:', e);
     }
+  } else {
+    console.log('[API] No token getter configured');
   }
   
   return headers;
@@ -227,6 +230,170 @@ export async function deleteImage(id: number) {
   const headers = await getAuthHeaders();
   const response = await fetch(`${API_BASE}/images?id=${id}`, {
     method: 'DELETE',
+    headers,
+    credentials: 'include'
+  });
+  return response.json();
+}
+
+// === Team Users API ===
+
+export async function getTeamUsers() {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_BASE}/team-users`, { headers, credentials: 'include' });
+  return response.json();
+}
+
+export async function createTeamUser(data: {
+  username: string;
+  password: string;
+  name: string;
+  allowed_accommodations: number[];
+}) {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_BASE}/team-users`, {
+    method: 'POST',
+    headers,
+    credentials: 'include',
+    body: JSON.stringify(data)
+  });
+  return response.json();
+}
+
+export async function updateTeamUser(id: number, data: {
+  username?: string;
+  password?: string;
+  name?: string;
+  allowed_accommodations?: number[];
+}) {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_BASE}/team-users/${id}`, {
+    method: 'PUT',
+    headers,
+    credentials: 'include',
+    body: JSON.stringify(data)
+  });
+  return response.json();
+}
+
+export async function deleteTeamUser(id: number) {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_BASE}/team-users/${id}`, {
+    method: 'DELETE',
+    headers,
+    credentials: 'include'
+  });
+  return response.json();
+}
+
+// === Dashboard Stats API ===
+
+export interface DashboardStats {
+  period: {
+    startDate: string;
+    endDate: string;
+    daysInPeriod: number;
+  };
+  global: {
+    confirmedCount: number;
+    pendingCount: number;
+    cancelledCount: number;
+    totalBookings: number;
+    totalNights: number;
+    totalRevenue: number;
+    netRevenue: number;
+    totalCommissions: number;
+    totalIva: number;
+    totalGuests: number;
+    avgStayDuration: number;
+    avgRevenuePerBooking: number;
+    avgRevenuePerNight: number;
+    avgGuestsPerBooking: number;
+    cancellationRate: number;
+    occupancyRate: number;
+    platformBreakdown: Record<string, { count: number; revenue: number }>;
+    nationalityBreakdown: { nationality: string; count: number }[];
+  };
+  perAccommodation: Array<{
+    id: number;
+    name: string;
+    confirmedCount: number;
+    pendingCount: number;
+    cancelledCount: number;
+    totalBookings: number;
+    totalNights: number;
+    totalRevenue: number;
+    netRevenue: number;
+    totalCommissions: number;
+    totalIva: number;
+    totalGuests: number;
+    avgStayDuration: number;
+    avgRevenuePerBooking: number;
+    avgRevenuePerNight: number;
+    avgGuestsPerBooking: number;
+    cancellationRate: number;
+    occupancyRate: number;
+    blockedNights: number;
+    availableDays: number;
+    platformBreakdown: Record<string, { count: number; revenue: number }>;
+    nationalityBreakdown: { nationality: string; count: number }[];
+  }>;
+}
+
+export async function fetchDashboardStats(startDate: string, endDate: string): Promise<DashboardStats> {
+  const headers = await getAuthHeaders();
+  const params = new URLSearchParams({ start_date: startDate, end_date: endDate });
+  const response = await fetch(`${API_BASE}/dashboard/stats?${params.toString()}`, { 
+    headers, 
+    credentials: 'include' 
+  });
+  return response.json();
+}
+
+// === Backup API ===
+
+export interface BackupResult {
+  success: boolean;
+  date?: string;
+  stats?: {
+    bookings: number;
+    blocked_dates: number;
+    accommodations: number;
+  };
+  r2_key?: string;
+  email_sent?: boolean;
+  error?: string;
+}
+
+export interface BackupStatus {
+  total_backups: number;
+  latest_backup: {
+    key: string;
+    date: string;
+    size: number;
+    uploaded: string;
+  } | null;
+  backups: Array<{
+    key: string;
+    date: string;
+    size: number;
+    uploaded: string;
+  }>;
+}
+
+export async function sendBackup(): Promise<BackupResult> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_BASE}/admin/backup/send`, {
+    method: 'POST',
+    headers,
+    credentials: 'include'
+  });
+  return response.json();
+}
+
+export async function getBackupStatus(): Promise<BackupStatus> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${API_BASE}/admin/backup/status`, {
     headers,
     credentials: 'include'
   });

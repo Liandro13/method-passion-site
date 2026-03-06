@@ -1,6 +1,7 @@
 // Centralized hook for fetching bookings and blocked dates
 
 import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@clerk/clerk-react';
 import { getBookings, getBlockedDates } from '../lib/api';
 import type { Booking, BlockedDate } from '../types';
 
@@ -11,11 +12,17 @@ interface UseBookingsOptions {
 
 export function useBookings(options: UseBookingsOptions = {}) {
   const { accommodationId, autoLoad = true } = options;
+  const { isLoaded, isSignedIn } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [blockedDates, setBlockedDates] = useState<BlockedDate[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
+    if (!isLoaded || !isSignedIn) {
+      setLoading(false);
+      return;
+    }
+    
     try {
       setLoading(true);
       const [bookingsRes, blockedRes] = await Promise.all([
@@ -30,11 +37,11 @@ export function useBookings(options: UseBookingsOptions = {}) {
     } finally {
       setLoading(false);
     }
-  }, [accommodationId]);
+  }, [accommodationId, isLoaded, isSignedIn]);
 
   useEffect(() => {
-    if (autoLoad) load();
-  }, [load, autoLoad]);
+    if (autoLoad && isLoaded && isSignedIn) load();
+  }, [load, autoLoad, isLoaded, isSignedIn]);
 
   return {
     bookings,

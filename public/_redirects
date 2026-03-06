@@ -1,0 +1,17 @@
+# SPA Redirects for Cloudflare Pages
+
+# Admin SPA routes (must come BEFORE the catch-all)
+/admin  /admin/index.html  200
+/admin/  /admin/index.html  200
+/admin/:path  /admin/index.html  200
+
+# Teams SPA routes (must come BEFORE the catch-all)
+/teams  /teams/index.html  200
+/teams/  /teams/index.html  200
+/teams/:path  /teams/index.html  200
+
+# API routes - pass to Functions  
+/api/*  /api/:splat  200
+
+# Home SPA catch-all
+/:path  /index.html  200

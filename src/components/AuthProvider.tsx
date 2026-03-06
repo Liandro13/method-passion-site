@@ -3,21 +3,25 @@ import { useAuth } from '@clerk/clerk-react';
 import { setAuthTokenGetter } from '../lib/api';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { getToken, isLoaded } = useAuth();
+  const { getToken, isLoaded, isSignedIn } = useAuth();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     if (isLoaded) {
+      console.log('[AuthProvider] isLoaded:', isLoaded, 'isSignedIn:', isSignedIn);
       setAuthTokenGetter(async () => {
         try {
-          return await getToken();
-        } catch {
+          const token = await getToken();
+          console.log('[AuthProvider] getToken result:', token ? 'got token' : 'no token');
+          return token;
+        } catch (e) {
+          console.error('[AuthProvider] getToken error:', e);
           return null;
         }
       });
       setReady(true);
     }
-  }, [getToken, isLoaded]);
+  }, [getToken, isLoaded, isSignedIn]);
 
   if (!ready) {
     return (

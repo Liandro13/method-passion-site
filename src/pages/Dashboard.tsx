@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserButton } from '@clerk/clerk-react';
+import { UserButton, useAuth as useClerkAuth } from '@clerk/clerk-react';
 import { useAuth } from '../hooks/useAuth';
-import { getBookings } from '../lib/api';
+import { getBookings, sendBackup } from '../lib/api';
 import AccommodationPanel from '../components/AccommodationPanel';
 import BookingsListView from '../components/BookingsListView';
-import TeamsPanel from '../components/TeamsPanel';
 import AccommodationManager from '../components/AccommodationManager';
+import InsightsPanel from '../components/InsightsPanel';
 
-type ViewType = 'accommodation' | 'all-bookings' | 'teams' | 'manage-accommodations';
+type ViewType = 'accommodation' | 'all-bookings' | 'manage-accommodations' | 'insights';
 
 const accommodations = [
   { id: 1, name: 'Esperança Terrace', shortName: 'Esperança' },
@@ -23,8 +23,43 @@ export default function Dashboard() {
   const [todayCheckIns, setTodayCheckIns] = useState(0);
   const [monthBookings, setMonthBookings] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [backupLoading, setBackupLoading] = useState(false);
+  const [backupMessage, setBackupMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const { isLoaded, role, name } = useAuth();
+  const { isSignedIn } = useClerkAuth();
   const navigate = useNavigate();
+
+  // Handle backup
+  const handleBackup = async () => {
+    if (backupLoading) return;
+    
+    setBackupLoading(true);
+    setBackupMessage(null);
+    
+    try {
+      const result = await sendBackup();
+      if (result.success) {
+        setBackupMessage({
+          type: 'success',
+          text: `Backup enviado! ${result.stats?.bookings || 0} reservas exportadas.`
+        });
+      } else {
+        setBackupMessage({
+          type: 'error',
+          text: result.error || 'Erro ao enviar backup'
+        });
+      }
+    } catch (error) {
+      setBackupMessage({
+        type: 'error',
+        text: 'Erro de conexão ao enviar backup'
+      });
+    } finally {
+      setBackupLoading(false);
+      // Clear message after 5 seconds
+      setTimeout(() => setBackupMessage(null), 5000);
+    }
+  };
 
   // Check role and redirect if not admin
   useEffect(() => {
@@ -35,7 +70,7 @@ export default function Dashboard() {
 
   // Load stats
   const loadStats = useCallback(async () => {
-    if (!isLoaded || role !== 'admin') return;
+    if (!isLoaded || !isSignedIn || role !== 'admin') return;
 
     try {
       const result = await getBookings();
@@ -60,11 +95,11 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Error loading stats:', error);
     }
-  }, [isLoaded, role]);
+  }, [isLoaded, isSignedIn, role]);
 
   useEffect(() => {
-    loadStats();
-  }, [loadStats]);
+    if (isSignedIn) loadStats();
+  }, [loadStats, isSignedIn]);
 
   const handleBookingChange = () => {
     loadStats();
@@ -95,7 +130,7 @@ export default function Dashboard() {
             </button>
             <div className="flex items-center gap-3">
               <img 
-                src="/images/logo.jpeg" 
+                src="/vite.svg" 
                 alt="Logo" 
                 className="h-10 w-10 rounded-full object-cover"
               />
@@ -145,6 +180,17 @@ export default function Dashboard() {
               Geral
             </div>
             <button
+              onClick={() => setActiveView('insights')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                activeView === 'insights'
+                  ? 'bg-primary text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <span>📊</span>
+              <span className="font-medium text-sm">Dashboard</span>
+            </button>
+            <button
               onClick={() => setActiveView('all-bookings')}
               className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
                 activeView === 'all-bookings'
@@ -163,17 +209,6 @@ export default function Dashboard() {
                   {pendingCount}
                 </span>
               )}
-            </button>
-            <button
-              onClick={() => setActiveView('teams')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                activeView === 'teams'
-                  ? 'bg-primary text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <span>👥</span>
-              <span className="font-medium text-sm">Equipas</span>
             </button>
             <button
               onClick={() => setActiveView('manage-accommodations')}
@@ -238,6 +273,20 @@ export default function Dashboard() {
                 </div>
                 <button
                   onClick={() => {
+                    setActiveView('insights');
+                    setSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    activeView === 'insights'
+                      ? 'bg-primary text-white'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  <span>📊</span>
+                  <span className="font-medium">Dashboard</span>
+                </button>
+                <button
+                  onClick={() => {
                     setActiveView('all-bookings');
                     setSidebarOpen(false);
                   }}
@@ -258,20 +307,6 @@ export default function Dashboard() {
                       {pendingCount}
                     </span>
                   )}
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveView('teams');
-                    setSidebarOpen(false);
-                  }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    activeView === 'teams'
-                      ? 'bg-primary text-white'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  <span>👥</span>
-                  <span className="font-medium">Equipas</span>
                 </button>
                 <button
                   onClick={() => {
@@ -327,8 +362,8 @@ export default function Dashboard() {
               showAccommodationFilter={true}
             />
           )}
-          {activeView === 'teams' && <TeamsPanel />}
           {activeView === 'manage-accommodations' && <AccommodationManager />}
+          {activeView === 'insights' && <InsightsPanel />}
         </main>
       </div>
 
@@ -353,6 +388,15 @@ export default function Dashboard() {
             </button>
           ))}
           <button
+            onClick={() => setActiveView('insights')}
+            className={`flex flex-col items-center py-2 px-2 rounded-lg transition-colors ${
+              activeView === 'insights' ? 'text-primary' : 'text-gray-500'
+            }`}
+          >
+            <span className="text-lg">📊</span>
+            <span className="text-[10px] mt-0.5">Stats</span>
+          </button>
+          <button
             onClick={() => setActiveView('all-bookings')}
             className={`flex flex-col items-center py-2 px-2 rounded-lg transition-colors relative ${
               activeView === 'all-bookings' ? 'text-primary' : 'text-gray-500'
@@ -365,15 +409,6 @@ export default function Dashboard() {
                 {pendingCount}
               </span>
             )}
-          </button>
-          <button
-            onClick={() => setActiveView('teams')}
-            className={`flex flex-col items-center py-2 px-2 rounded-lg transition-colors ${
-              activeView === 'teams' ? 'text-primary' : 'text-gray-500'
-            }`}
-          >
-            <span className="text-lg">👥</span>
-            <span className="text-[10px] mt-0.5">Equipas</span>
           </button>
           <button
             onClick={() => setActiveView('manage-accommodations')}

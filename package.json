@@ -1,48 +1,41 @@
 {
-  "name": "method-passion-site",
+  "name": "method-passion-monorepo",
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "npm run dev --workspace=apps/home",
+    "dev:admin": "npm run dev --workspace=apps/admin",
+    "dev:teams": "npm run dev --workspace=apps/teams",
+    "dev:all": "npm run dev --workspace=apps/home & npm run dev --workspace=apps/admin & npm run dev --workspace=apps/teams",
+    "build": "bash scripts/build.sh",
+    "build:home": "npm run build --workspace=apps/home",
+    "build:admin": "npm run build --workspace=apps/admin",
+    "build:teams": "npm run build --workspace=apps/teams",
     "lint": "eslint .",
-    "preview": "vite preview",
     "db:create": "wrangler d1 create method-passion-db",
     "db:migrate": "wrangler d1 execute method-passion-db --file=./schema.sql",
     "db:seed": "wrangler d1 execute method-passion-db --file=./seed.sql",
-    "pages:dev": "wrangler pages dev --d1=DB=method-passion-db -- npm run dev"
-  },
-  "dependencies": {
-    "@clerk/clerk-react": "^5.60.0",
-    "@fullcalendar/core": "^6.1.20",
-    "@fullcalendar/daygrid": "^6.1.20",
-    "@fullcalendar/interaction": "^6.1.20",
-    "@fullcalendar/react": "^6.1.20",
-    "embla-carousel-react": "^8.6.0",
-    "react": "^19.2.0",
-    "react-datepicker": "^9.1.0",
-    "react-dom": "^19.2.0",
-    "react-router-dom": "^7.13.0"
+    "pages:dev": "wrangler pages dev --d1=DB=method-passion-db --port=8788"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
-    "@tailwindcss/postcss": "^4.1.18",
     "@types/node": "^24.10.1",
-    "@types/react": "^19.2.5",
-    "@types/react-datepicker": "^6.2.0",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.1.1",
-    "autoprefixer": "^10.4.24",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.18",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",
-    "vite": "^7.2.4",
     "wrangler": "^4.61.1"
+  },
+  "dependencies": {
+    "hono": "^4.11.7",
+    "recharts": "^3.7.0",
+    "zod": "^4.3.6"
   }
 }
