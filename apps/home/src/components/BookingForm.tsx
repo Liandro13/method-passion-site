@@ -133,7 +133,9 @@ export default function BookingForm({
       const message = encodeURIComponent(messages[language]);
       const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER.replace(/\+/g, '')}?text=${message}`;
       
-      window.open(whatsappUrl, '_blank');
+      // Use location.href instead of window.open — Safari mobile blocks
+      // popups opened after an async call (not in the original click stack).
+      window.location.href = whatsappUrl;
     } catch {
       setError('Error checking availability');
     } finally {
