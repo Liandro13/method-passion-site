@@ -67,6 +67,7 @@ export interface CalendarEvent {
   end: string;
   backgroundColor: string;
   borderColor: string;
+  classNames?: string[];
   extendedProps: {
     type: 'booking' | 'blocked';
     bookingId?: number;

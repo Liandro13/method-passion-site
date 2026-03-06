@@ -17,17 +17,25 @@ export default function TeamAccommodationPanel({ accommodationId, accommodationN
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [activeTab, setActiveTab] = useState<'calendar' | 'list'>('calendar');
 
-  // Keep calendar on the same month after data reloads
-  const calendarRef = useRef<FullCalendar>(null);
-  const currentDateRef = useRef<Date>(new Date());
-  const handleDatesSet = useCallback((arg: { start: Date; end: Date }) => {
-    const mid = new Date((arg.start.getTime() + arg.end.getTime()) / 2);
-    currentDateRef.current = mid;
-  }, []);
-
   // Filtros simples
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'upcoming' | 'past'>('upcoming');
+
+  // Calendar state: persist current month across reloads
+  const calendarRef = useRef<FullCalendar>(null);
+  const currentDateRef = useRef<Date>(new Date());
+
+  // Update CSS variable for half-day width (hotel-style check-in/check-out)
+  const calendarContainerRef = useRef<HTMLDivElement>(null);
+
+  const updateHalfDayWidth = useCallback(() => {
+    const container = calendarContainerRef.current;
+    if (!container) return;
+    const dayCell = container.querySelector('.fc-daygrid-day') as HTMLElement;
+    if (dayCell) {
+      container.style.setProperty('--fc-half-day', `${dayCell.offsetWidth / 2}px`);
+    }
+  }, []);
 
   // Helper to add days to a date string (YYYY-MM-DD)
   const addDays = (dateStr: string, days: number): string => {
@@ -37,7 +45,7 @@ export default function TeamAccommodationPanel({ accommodationId, accommodationN
   };
 
   // Convert data to calendar events
-  // Bookings use timed start/end to create half-bar visuals (hotel-style)
+  // Note: FullCalendar uses EXCLUSIVE end dates, so we add +1 day to show the checkout/end day visually
   const events = useMemo(() => {
     const calendarEvents: CalendarEvent[] = [];
 
@@ -48,10 +56,12 @@ export default function TeamAccommodationPanel({ accommodationId, accommodationN
       calendarEvents.push({
         id: `booking-${booking.id}`,
         title: booking.primary_name,
-        start: `${booking.check_in}T15:00:00`,
-        end: `${booking.check_out}T12:00:00`,
+        start: booking.check_in,
+        // Add +1 day so checkout day is visually included (FullCalendar end is exclusive)
+        end: addDays(booking.check_out, 1),
         backgroundColor: colors.bg,
         borderColor: colors.border,
+        classNames: ['booking-event'],
         extendedProps: {
           type: 'booking',
           bookingId: booking.id,
@@ -69,17 +79,12 @@ export default function TeamAccommodationPanel({ accommodationId, accommodationN
         end: addDays(blocked.end_date, 1),
         backgroundColor: '#ef4444',
         borderColor: '#dc2626',
+        classNames: ['blocked-event'],
         extendedProps: {
           type: 'blocked',
           blockedId: blocked.id
         }
       });
-    });
-
-    // Restore calendar to the month the user was viewing
-    requestAnimationFrame(() => {
-      const api = calendarRef.current?.getApi();
-      if (api) api.gotoDate(currentDateRef.current);
     });
 
     return calendarEvents;
@@ -134,7 +139,7 @@ export default function TeamAccommodationPanel({ accommodationId, accommodationN
   const today = new Date().toISOString().split('T')[0];
   const upcomingCount = bookings.filter(b => b.status === 'confirmed' && b.check_in >= today).length;
 
-  if (loading) {
+  if (loading && bookings.length === 0) {
     return <div className="text-center py-12 text-gray-500">A carregar...</div>;
   }
 
@@ -177,23 +182,30 @@ export default function TeamAccommodationPanel({ accommodationId, accommodationN
             <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-500" /> Confirmado</span>
             <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-500" /> Bloqueado</span>
           </div>
-          <FullCalendar
-            ref={calendarRef}
-            plugins={[dayGridPlugin]}
-            initialView="dayGridMonth"
-            events={events}
-            eventClick={handleEventClick}
-            datesSet={handleDatesSet}
-            headerToolbar={{
-              left: 'prev,next today',
-              center: 'title',
-              right: 'dayGridMonth'
-            }}
-            locale="pt"
-            height="auto"
-            eventDisplay="block"
-            nextDayThreshold="12:00:00"
-          />
+          <div ref={calendarContainerRef}>
+            <FullCalendar
+              ref={calendarRef}
+              plugins={[dayGridPlugin]}
+              initialView="dayGridMonth"
+              initialDate={currentDateRef.current}
+              events={events}
+              eventClick={handleEventClick}
+              datesSet={(dateInfo) => {
+                currentDateRef.current = dateInfo.view.currentStart;
+                updateHalfDayWidth();
+              }}
+              viewDidMount={() => setTimeout(updateHalfDayWidth, 0)}
+              windowResize={() => updateHalfDayWidth()}
+              headerToolbar={{
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth'
+              }}
+              locale="pt"
+              height="auto"
+              eventDisplay="block"
+            />
+          </div>
         </div>
       )}
 

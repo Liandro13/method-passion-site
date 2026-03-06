@@ -30,15 +30,6 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
   const [selectedDates, setSelectedDates] = useState<{ start: string; end: string } | null>(null);
 
-  // Keep calendar on the same month after data reloads
-  const calendarRef = useRef<FullCalendar>(null);
-  const currentDateRef = useRef<Date>(new Date());
-  const handleDatesSet = useCallback((arg: { start: Date; end: Date }) => {
-    // The midpoint between start/end gives us the visible month
-    const mid = new Date((arg.start.getTime() + arg.end.getTime()) / 2);
-    currentDateRef.current = mid;
-  }, []);
-
   // Filtros
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -46,6 +37,21 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [activeTab, setActiveTab] = useState<'calendar' | 'list'>('calendar');
+
+  // Calendar state: persist current month across reloads
+  const calendarRef = useRef<FullCalendar>(null);
+  const calendarContainerRef = useRef<HTMLDivElement>(null);
+  const currentDateRef = useRef<Date>(new Date());
+
+  // Update CSS variable for half-day width (hotel-style check-in/check-out)
+  const updateHalfDayWidth = useCallback(() => {
+    const container = calendarContainerRef.current;
+    if (!container) return;
+    const dayCell = container.querySelector('.fc-daygrid-day') as HTMLElement;
+    if (dayCell) {
+      container.style.setProperty('--fc-half-day', `${dayCell.offsetWidth / 2}px`);
+    }
+  }, []);
 
   // Helper to add days to a date string (YYYY-MM-DD)
   const addDays = (dateStr: string, days: number): string => {
@@ -55,10 +61,7 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
   };
 
   // Convert data to calendar events
-  // Bookings use timed start/end to create half-bar visuals:
-  //   Check-in day starts at 15:00 (afternoon) → left half empty
-  //   Check-out day ends at 12:00 (noon) → right half empty
-  // This mimics hotel calendars where guests arrive PM and leave AM.
+  // Note: FullCalendar uses EXCLUSIVE end dates, so we add +1 day to show the checkout/end day visually
   const events = useMemo(() => {
     const calendarEvents: CalendarEvent[] = [];
 
@@ -70,10 +73,12 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
       calendarEvents.push({
         id: `booking-${booking.id}`,
         title: `${booking.primary_name}${statusLabel}`,
-        start: `${booking.check_in}T15:00:00`,
-        end: `${booking.check_out}T12:00:00`,
+        start: booking.check_in,
+        // Add +1 day so checkout day is visually included (FullCalendar end is exclusive)
+        end: addDays(booking.check_out, 1),
         backgroundColor: colors.bg,
         borderColor: colors.border,
+        classNames: ['booking-event'],
         extendedProps: {
           type: 'booking',
           bookingId: booking.id,
@@ -91,17 +96,12 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
         end: addDays(blocked.end_date, 1),
         backgroundColor: '#ef4444',
         borderColor: '#dc2626',
+        classNames: ['blocked-event'],
         extendedProps: {
           type: 'blocked',
           blockedId: blocked.id
         }
       });
-    });
-
-    // Restore calendar to the month the user was viewing
-    requestAnimationFrame(() => {
-      const api = calendarRef.current?.getApi();
-      if (api) api.gotoDate(currentDateRef.current);
     });
 
     return calendarEvents;
@@ -233,7 +233,7 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
 
   const pendingCount = bookings.filter(b => b.status === 'pending').length;
 
-  if (loading) {
+  if (loading && bookings.length === 0) {
     return <div className="text-center py-12 text-gray-500">A carregar...</div>;
   }
 
@@ -293,25 +293,32 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
             <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-500" /> Cancelado</span>
             <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-500" /> Bloqueado</span>
           </div>
-          <FullCalendar
-            ref={calendarRef}
-            plugins={[dayGridPlugin, interactionPlugin]}
-            initialView="dayGridMonth"
-            events={events}
-            selectable={true}
-            select={handleDateSelect}
-            eventClick={handleEventClick}
-            datesSet={handleDatesSet}
-            headerToolbar={{
-              left: 'prev,next today',
-              center: 'title',
-              right: 'dayGridMonth'
-            }}
-            locale="pt"
-            height="auto"
-            eventDisplay="block"
-            nextDayThreshold="12:00:00"
-          />
+          <div ref={calendarContainerRef}>
+            <FullCalendar
+              ref={calendarRef}
+              plugins={[dayGridPlugin, interactionPlugin]}
+              initialView="dayGridMonth"
+              initialDate={currentDateRef.current}
+              events={events}
+              selectable={true}
+              select={handleDateSelect}
+              eventClick={handleEventClick}
+              datesSet={(dateInfo) => {
+                currentDateRef.current = dateInfo.view.currentStart;
+                updateHalfDayWidth();
+              }}
+              viewDidMount={() => setTimeout(updateHalfDayWidth, 0)}
+              windowResize={() => updateHalfDayWidth()}
+              headerToolbar={{
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth'
+              }}
+              locale="pt"
+              height="auto"
+              eventDisplay="block"
+            />
+          </div>
         </div>
       )}
 
