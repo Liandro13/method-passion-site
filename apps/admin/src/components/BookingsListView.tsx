@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { updateBooking, createBooking } from '../lib/api';
 import type { Booking } from '@method-passion/shared';
-import { ACCOMMODATION_MAP, STATUS_OPTIONS, PLATFORM_OPTIONS, ACCOMMODATIONS, formatDate } from '@method-passion/shared';
+import { ACCOMMODATION_MAP, STATUS_OPTIONS, PLATFORM_OPTIONS, ACCOMMODATIONS, formatDate, Icon } from '@method-passion/shared';
 import BookingModal from './BookingModal';
 import StatusBadge from './ui/StatusBadge';
 import { exportBookingsToCSV } from '../utils/exportCsv';
@@ -174,7 +174,7 @@ export default function BookingsListView({ onBookingChange, initialStatusFilter,
           <div>
             <input
               type="text"
-              placeholder="🔍 Pesquisar por nome..."
+              placeholder="Pesquisar por nome..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="input-field w-full"
@@ -247,9 +247,9 @@ export default function BookingsListView({ onBookingChange, initialStatusFilter,
             {hasActiveFilters && (
               <button
                 onClick={clearFilters}
-                className="px-4 py-2 text-sm text-gray-600 hover:text-dark transition-colors"
+                className="px-4 py-2 text-sm text-gray-600 hover:text-dark transition-colors flex items-center gap-1"
               >
-                ✕ Limpar filtros
+                <Icon.XMark className="w-3.5 h-3.5" /> Limpar filtros
               </button>
             )}
             <button
@@ -266,7 +266,7 @@ export default function BookingsListView({ onBookingChange, initialStatusFilter,
               className="btn-secondary text-sm"
               title="Exportar reservas filtradas"
             >
-              📥 Exportar CSV
+              <Icon.Download className="w-4 h-4 inline" /> Exportar CSV
             </button>
           </div>
         </div>
@@ -286,7 +286,7 @@ export default function BookingsListView({ onBookingChange, initialStatusFilter,
       <div className="hidden lg:block bg-white rounded-xl shadow-lg overflow-hidden">
         {filteredBookings.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
-            <div className="text-4xl mb-2">📭</div>
+            <div className="mb-2"><Icon.Inbox className="w-10 h-10 mx-auto text-gray-300" /></div>
             <p>Nenhuma reserva encontrada com os filtros aplicados</p>
           </div>
         ) : (
@@ -385,7 +385,7 @@ export default function BookingsListView({ onBookingChange, initialStatusFilter,
                               className="p-1.5 text-green-600 hover:bg-green-50 rounded transition-colors"
                               title="Aprovar"
                             >
-                              {updatingId === booking.id ? '...' : '✓'}
+                              {updatingId === booking.id ? '...' : <Icon.Check className="w-4 h-4" />}
                             </button>
                             <button
                               onClick={() => handleQuickReject(booking)}
@@ -393,7 +393,7 @@ export default function BookingsListView({ onBookingChange, initialStatusFilter,
                               className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
                               title="Rejeitar"
                             >
-                              {updatingId === booking.id ? '...' : '✗'}
+                              {updatingId === booking.id ? '...' : <Icon.XMark className="w-4 h-4" />}
                             </button>
                           </>
                         )}
@@ -405,7 +405,7 @@ export default function BookingsListView({ onBookingChange, initialStatusFilter,
                           className="p-1.5 text-primary hover:bg-blue-50 rounded transition-colors"
                           title="Editar"
                         >
-                          ✏️
+                          <Icon.Pencil className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(booking)}
@@ -413,7 +413,7 @@ export default function BookingsListView({ onBookingChange, initialStatusFilter,
                           className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
                           title="Eliminar"
                         >
-                          🗑️
+                          <Icon.Trash className="w-4 h-4" />
                         </button>
                       </div>
                     </td>
@@ -429,7 +429,7 @@ export default function BookingsListView({ onBookingChange, initialStatusFilter,
       <div className="lg:hidden space-y-3">
         {filteredBookings.length === 0 ? (
           <div className="bg-white rounded-xl shadow-lg p-8 text-center text-gray-500">
-            <div className="text-4xl mb-2">📭</div>
+            <div className="mb-2"><Icon.Inbox className="w-10 h-10 mx-auto text-gray-300" /></div>
             <p>Nenhuma reserva encontrada</p>
           </div>
         ) : (
@@ -478,14 +478,14 @@ export default function BookingsListView({ onBookingChange, initialStatusFilter,
                       disabled={updatingId === booking.id}
                       className="flex-1 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:opacity-50"
                     >
-                      {updatingId === booking.id ? '...' : '✓ Aprovar'}
+                      {updatingId === booking.id ? '...' : <><Icon.Check className="w-4 h-4 inline" /> Aprovar</>}
                     </button>
                     <button
                       onClick={() => handleQuickReject(booking)}
                       disabled={updatingId === booking.id}
                       className="flex-1 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 disabled:opacity-50"
                     >
-                      {updatingId === booking.id ? '...' : '✗ Rejeitar'}
+                      {updatingId === booking.id ? '...' : <><Icon.XMark className="w-4 h-4 inline" /> Rejeitar</>}
                     </button>
                   </>
                 )}
@@ -496,7 +496,7 @@ export default function BookingsListView({ onBookingChange, initialStatusFilter,
                   }}
                   className="flex-1 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary/90"
                 >
-                  ✏️ Editar
+                  <Icon.Pencil className="w-4 h-4 inline" /> Editar
                 </button>
               </div>
             </div>

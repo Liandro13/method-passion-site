@@ -1,11 +1,11 @@
 // Reusable sidebar navigation component
-import { ACCOMMODATIONS } from '@method-passion/shared';
+import { ACCOMMODATIONS, Icon } from '@method-passion/shared';
 
 type ViewType = 'accommodation' | 'all-bookings' | 'manage-accommodations' | 'insights';
 
 interface NavItem {
   id: ViewType | string;
-  icon: string;
+  icon: React.ReactNode;
   label: string;
   shortLabel?: string;
   badge?: number;
@@ -42,18 +42,18 @@ export default function Sidebar({ activeView, activeAccommodation, pendingCount,
           {ACCOMMODATIONS.map((acc, index) => (
             <NavButton
               key={acc.id}
-              icon="🏠"
+              icon={<Icon.Home className="w-5 h-5" />}
               label={acc.shortName}
               active={isActive('accommodation', index)}
               onClick={() => handleClick('accommodation', index)}
               variant="bottom"
             />
           ))}
-          <NavButton icon="📊" label="Stats" active={isActive('insights')} 
+          <NavButton icon={<Icon.ChartBar className="w-5 h-5" />} label="Stats" active={isActive('insights')} 
             onClick={() => handleClick('insights')} variant="bottom" />
-          <NavButton icon="📋" label="Todas" active={isActive('all-bookings')} 
+          <NavButton icon={<Icon.List className="w-5 h-5" />} label="Todas" active={isActive('all-bookings')} 
             onClick={() => handleClick('all-bookings')} variant="bottom" badge={pendingCount} />
-          <NavButton icon="🏡" label="Gerir" active={isActive('manage-accommodations')} 
+          <NavButton icon={<Icon.Settings className="w-5 h-5" />} label="Gerir" active={isActive('manage-accommodations')} 
             onClick={() => handleClick('manage-accommodations')} variant="bottom" />
         </div>
       </nav>
@@ -67,7 +67,7 @@ export default function Sidebar({ activeView, activeAccommodation, pendingCount,
         {ACCOMMODATIONS.map((acc, index) => (
           <NavButton
             key={acc.id}
-            icon="🏠"
+            icon={<Icon.Home className="w-5 h-5" />}
             label={acc.shortName}
             active={isActive('accommodation', index)}
             onClick={() => handleClick('accommodation', index)}
@@ -79,11 +79,11 @@ export default function Sidebar({ activeView, activeAccommodation, pendingCount,
       <div className="border-t border-gray-200 my-3" />
 
       <NavSection title="Geral">
-        <NavButton icon="📊" label="Dashboard" active={isActive('insights')} 
+        <NavButton icon={<Icon.ChartBar className="w-5 h-5" />} label="Dashboard" active={isActive('insights')} 
           onClick={() => handleClick('insights')} variant="sidebar" />
-        <NavButton icon="📋" label="Todas Reservas" active={isActive('all-bookings')} 
+        <NavButton icon={<Icon.List className="w-5 h-5" />} label="Todas Reservas" active={isActive('all-bookings')} 
           onClick={() => handleClick('all-bookings')} variant="sidebar" badge={pendingCount} />
-        <NavButton icon="🏡" label="Gerir Alojamentos" active={isActive('manage-accommodations')} 
+        <NavButton icon={<Icon.Settings className="w-5 h-5" />} label="Gerir Alojamentos" active={isActive('manage-accommodations')} 
           onClick={() => handleClick('manage-accommodations')} variant="sidebar" />
       </NavSection>
     </nav>
@@ -104,7 +104,7 @@ export default function Sidebar({ activeView, activeAccommodation, pendingCount,
       <aside className="fixed left-0 top-0 bottom-0 w-64 bg-white z-40 lg:hidden shadow-xl">
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           <span className="font-semibold text-dark">Menu</span>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">✕</button>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg"><Icon.XMark className="w-5 h-5" /></button>
         </div>
         {content}
       </aside>
@@ -125,7 +125,7 @@ function NavSection({ title, children }: { title: string; children: React.ReactN
 }
 
 interface NavButtonProps {
-  icon: string;
+  icon: React.ReactNode;
   label: string;
   active: boolean;
   onClick: () => void;
@@ -142,7 +142,7 @@ function NavButton({ icon, label, active, onClick, variant, badge }: NavButtonPr
           active ? 'text-primary' : 'text-gray-500'
         }`}
       >
-        <span className="text-lg">{icon}</span>
+        <span className="text-lg flex items-center justify-center">{icon}</span>
         <span className="text-[10px] mt-0.5">{label}</span>
         {badge && badge > 0 && (
           <span className="absolute top-1 right-0 px-1 py-0.5 text-[8px] bg-yellow-500 text-white rounded-full min-w-[14px] text-center">

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
 import type { Accommodation, AccommodationImage, Language } from '@method-passion/shared';
+import { Icon } from '@method-passion/shared';
 import { translations } from '../lib/i18n';
 import BookingForm from './BookingForm';
 
@@ -39,8 +40,8 @@ export default function AccommodationModal({ accommodation, language, descriptio
             <div>
               <h2 className="text-xl font-semibold text-dark">{accommodation.name}</h2>
               <div className="flex items-center gap-3 text-sm text-gray-500 mt-1">
-                <span className="flex items-center gap-1">👥 {accommodation.max_guests} {language === 'pt' ? 'hóspedes' : 'guests'}</span>
-                <span className="flex items-center gap-1">📷 {images.length} {language === 'pt' ? 'fotos' : 'photos'}</span>
+                <span className="flex items-center gap-1"><Icon.Users className="w-4 h-4" /> {accommodation.max_guests} {language === 'pt' ? 'hóspedes' : 'guests'}</span>
+                <span className="flex items-center gap-1"><Icon.Camera className="w-4 h-4" /> {images.length} {language === 'pt' ? 'fotos' : 'photos'}</span>
               </div>
             </div>
             <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
@@ -61,7 +62,7 @@ export default function AccommodationModal({ accommodation, language, descriptio
                     activeTab === tab ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  {tab === 'photos' ? (language === 'pt' ? '📷 Fotografias' : '📷 Photos') : (language === 'pt' ? '📅 Reservar' : '📅 Book')}
+                  {tab === 'photos' ? (language === 'pt' ? 'Fotografias' : 'Photos') : (language === 'pt' ? 'Reservar' : 'Book')}
                 </button>
               ))}
             </div>
@@ -92,7 +93,7 @@ export default function AccommodationModal({ accommodation, language, descriptio
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {features.map((feature, idx) => (
                         <div key={idx} className="flex items-center gap-2 px-3 py-2 bg-background rounded-lg">
-                          <span className="text-primary">✓</span>
+                          <span className="text-primary"><Icon.Check className="w-4 h-4" /></span>
                           <span className="text-sm text-gray-700">{feature}</span>
                         </div>
                       ))}

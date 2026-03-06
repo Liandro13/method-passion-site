@@ -18,9 +18,9 @@ export const ACCOMMODATION_COLORS: Record<number, { bg: string; border: string; 
 
 export const STATUS_OPTIONS = [
   { value: '', label: 'Todos os estados' },
-  { value: 'confirmed', label: '🟢 Confirmado' },
-  { value: 'pending', label: '🟡 Pendente' },
-  { value: 'cancelled', label: '⚫ Cancelado' }
+  { value: 'confirmed', label: 'Confirmado' },
+  { value: 'pending', label: 'Pendente' },
+  { value: 'cancelled', label: 'Cancelado' }
 ] as const;
 
 export const STATUS_COLORS: Record<string, { bg: string; border: string; badgeClass: string }> = {
@@ -30,9 +30,9 @@ export const STATUS_COLORS: Record<string, { bg: string; border: string; badgeCl
 };
 
 export const STATUS_LABELS: Record<string, string> = {
-  confirmed: '🟢 Confirmado',
-  pending: '🟡 Pendente',
-  cancelled: '⚫ Cancelado'
+  confirmed: 'Confirmado',
+  pending: 'Pendente',
+  cancelled: 'Cancelado'
 };
 
 export const PLATFORM_OPTIONS = [

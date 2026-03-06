@@ -13,6 +13,7 @@ import {
   Cell
 } from 'recharts';
 import { fetchDashboardStats, DashboardStats } from '../lib/api';
+import { Icon } from '@method-passion/shared';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 const ACCOMMODATION_COLORS: Record<number, string> = {
@@ -235,41 +236,41 @@ export default function InsightsPanel() {
           title="Receita Total"
           value={formatCurrency(displayStats.totalRevenue)}
           color="text-green-600"
-          icon="💰"
+          icon={<Icon.CurrencyEuro className="w-6 h-6" />}
         />
         <KPICard
           title="Receita Líquida"
           value={formatCurrency(displayStats.netRevenue)}
           subtitle={`-${formatCurrency(displayStats.totalCommissions)} comissões`}
           color="text-blue-600"
-          icon="📊"
+          icon={<Icon.ChartBar className="w-6 h-6" />}
         />
         <KPICard
           title="Reservas"
           value={displayStats.confirmedCount.toString()}
           subtitle={displayStats.pendingCount > 0 ? `+${displayStats.pendingCount} pendentes` : undefined}
           color="text-primary"
-          icon="📅"
+          icon={<Icon.Calendar className="w-6 h-6" />}
         />
         <KPICard
           title="Noites Reservadas"
           value={displayStats.totalNights.toString()}
           subtitle={`~${displayStats.avgStayDuration.toFixed(1)} noites/reserva`}
           color="text-purple-600"
-          icon="🌙"
+          icon={<Icon.Moon className="w-6 h-6" />}
         />
         <KPICard
           title="Taxa Ocupação"
           value={`${displayStats.occupancyRate.toFixed(0)}%`}
           color="text-amber-600"
-          icon="📈"
+          icon={<Icon.TrendingUp className="w-6 h-6" />}
         />
         <KPICard
           title="Hóspedes"
           value={displayStats.totalGuests.toString()}
           subtitle={`~${displayStats.avgGuestsPerBooking.toFixed(1)}/reserva`}
           color="text-teal-600"
-          icon="👥"
+          icon={<Icon.Users className="w-6 h-6" />}
         />
       </div>
 
@@ -439,7 +440,7 @@ function KPICard({
   value: string; 
   subtitle?: string;
   color?: string;
-  icon?: string;
+  icon?: React.ReactNode;
 }) {
   return (
     <div className="bg-white rounded-xl shadow p-4">
@@ -451,7 +452,7 @@ function KPICard({
             <p className="text-xs text-gray-400 mt-1">{subtitle}</p>
           )}
         </div>
-        {icon && <span className="text-2xl opacity-50">{icon}</span>}
+        {icon && <span className="text-gray-300">{icon}</span>}
       </div>
     </div>
   );

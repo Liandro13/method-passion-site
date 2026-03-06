@@ -4,7 +4,7 @@
 
 set -e
 
-echo "🏗️  Building Method & Passion Monorepo..."
+echo "[BUILD] Building Method & Passion Monorepo..."
 
 # Clean previous builds
 rm -rf dist
@@ -17,19 +17,19 @@ if [ -f ".env" ]; then
 fi
 
 # Build home app
-echo "🏠 Building home app..."
+echo "[HOME] Building home app..."
 npm run build --workspace=apps/home
 
 # Build admin app  
-echo "🔐 Building admin app..."
+echo "[ADMIN] Building admin app..."
 npm run build --workspace=apps/admin
 
 # Build teams app  
-echo "👥 Building teams app..."
+echo "[TEAMS] Building teams app..."
 npm run build --workspace=apps/teams
 
 # Combine builds
-echo "📁 Combining builds..."
+echo "[DIST] Combining builds..."
 mkdir -p dist
 
 # Copy home app to root of dist
@@ -49,7 +49,7 @@ cp -r public/* dist/ 2>/dev/null || true
 # Fix admin index.html paths (they're relative to /admin/)
 # The vite base is already set to /admin/, so paths should be correct
 
-echo "✅ Build complete! Output in ./dist"
+echo "[DONE] Build complete! Output in ./dist"
 echo ""
 echo "Structure:"
 echo "  dist/"

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SignIn, useUser } from '@clerk/clerk-react';
 import { useAuth } from '../hooks/useAuth';
+import { Icon } from '@method-passion/shared';
 
 export default function TeamsLogin() {
   const { isSignedIn } = useUser();
@@ -29,7 +30,7 @@ export default function TeamsLogin() {
       <main className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <div className="text-center mb-6">
-            <div className="text-4xl mb-2">👥</div>
+            <div className="text-4xl mb-2"><Icon.Users className="w-10 h-10 mx-auto text-gray-400" /></div>
             <h2 className="text-xl font-semibold text-dark">Acesso Equipas</h2>
             <p className="text-sm text-gray-500">Limpeza e Receção</p>
           </div>

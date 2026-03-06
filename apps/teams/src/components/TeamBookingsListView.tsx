@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import type { Booking } from '@method-passion/shared';
-import { ACCOMMODATIONS, formatDate } from '@method-passion/shared';
+import { ACCOMMODATIONS, formatDate, Icon } from '@method-passion/shared';
 import TeamBookingDetailModal from './TeamBookingDetailModal';
 import StatusBadge from './ui/StatusBadge';
 import { useBookings } from '../hooks/useBookings';
@@ -90,7 +90,7 @@ export default function TeamBookingsListView({ allowedAccommodations }: TeamBook
           {/* Pesquisa */}
           <input
             type="text"
-            placeholder="🔍 Pesquisar por nome..."
+            placeholder="Pesquisar por nome..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="input-field flex-1"
@@ -146,7 +146,7 @@ export default function TeamBookingsListView({ allowedAccommodations }: TeamBook
                 onClick={clearFilters}
                 className="text-sm text-gray-600 hover:text-dark"
               >
-                ✕ Limpar filtros
+                <Icon.XMark className="w-3.5 h-3.5 inline" /> Limpar filtros
               </button>
             )}
             <span className="text-sm text-gray-500">{filteredBookings.length} reserva{filteredBookings.length !== 1 ? 's' : ''}</span>
@@ -197,7 +197,7 @@ export default function TeamBookingsListView({ allowedAccommodations }: TeamBook
                       className="p-1.5 text-primary hover:bg-blue-50 rounded"
                       title="Ver detalhes"
                     >
-                      👁️
+                      <Icon.Eye className="w-4 h-4" />
                     </button>
                   </td>
                 </tr>

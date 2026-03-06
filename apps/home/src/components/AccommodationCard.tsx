@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Accommodation, Language } from '@method-passion/shared';
+import { Icon } from '@method-passion/shared';
 
 interface AccommodationCardProps {
   accommodation: Accommodation;
@@ -52,7 +53,7 @@ export default function AccommodationCard({ accommodation, language, primaryImag
         <div className="flex items-start justify-between gap-2">
           <h3 className="font-semibold text-dark group-hover:text-primary transition-colors">{accommodation.name}</h3>
           <div className="flex items-center gap-1 text-gray-500 text-sm flex-shrink-0">
-            <span>👥</span>
+            <Icon.Users className="w-4 h-4" />
             <span>{accommodation.max_guests}</span>
           </div>
         </div>

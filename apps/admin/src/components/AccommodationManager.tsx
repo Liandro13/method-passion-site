@@ -8,6 +8,7 @@ import {
   reorderImages 
 } from '../lib/api';
 import type { Accommodation, AccommodationImage } from '@method-passion/shared';
+import { Icon } from '@method-passion/shared';
 
 type Language = 'pt' | 'en' | 'fr' | 'de' | 'es';
 
@@ -257,7 +258,7 @@ export default function AccommodationManager() {
           {/* Left Column - Images */}
           <div className="bg-white rounded-xl shadow p-6 space-y-4">
             <h3 className="font-semibold text-dark flex items-center gap-2">
-              <span>📷</span> Fotografias
+              <Icon.Camera className="w-5 h-5" /> Fotografias
             </h3>
 
             {/* Drop zone */}
@@ -287,7 +288,7 @@ export default function AccommodationManager() {
                 </div>
               ) : (
                 <>
-                  <div className="text-4xl mb-2">📤</div>
+                  <div className="text-4xl mb-2"><Icon.Upload className="w-10 h-10 mx-auto text-gray-400" /></div>
                   <div className="text-gray-600 font-medium">Arrastar imagens aqui</div>
                   <div className="text-gray-400 text-sm mt-1">ou clique para selecionar</div>
                 </>
@@ -296,8 +297,8 @@ export default function AccommodationManager() {
 
             {/* Upload error message */}
             {uploadError && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-                ⚠️ {uploadError}
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-center gap-2">
+                <Icon.Warning className="w-4 h-4 flex-shrink-0" /> {uploadError}
               </div>
             )}
 
@@ -326,7 +327,7 @@ export default function AccommodationManager() {
           {/* Right Column - Descriptions */}
           <div className="bg-white rounded-xl shadow p-6 space-y-4">
             <h3 className="font-semibold text-dark flex items-center gap-2">
-              <span>📝</span> Descrições
+              <Icon.DocumentText className="w-5 h-5" /> Descrições
             </h3>
 
             {/* Language tabs */}
@@ -366,7 +367,7 @@ export default function AccommodationManager() {
             {/* Amenities section */}
             <div className="space-y-2 pt-4 border-t border-gray-100">
               <label className="text-sm text-gray-600 flex items-center gap-2">
-                <span>✨</span> Comodidades em {languageLabels[activeLanguage]}
+                <Icon.Sparkles className="w-4 h-4" /> Comodidades em {languageLabels[activeLanguage]}
               </label>
               
               {/* Add new amenity */}
@@ -484,7 +485,7 @@ function ImageCard({
               onClick={onSetPrimary}
               className="w-full px-2 py-1 bg-white/90 text-xs rounded hover:bg-white transition-colors"
             >
-              ⭐ Definir como principal
+              Definir como principal
             </button>
           )}
           
@@ -509,14 +510,14 @@ function ImageCard({
             onClick={() => setEditingCaption(true)}
             className="w-full px-2 py-1 bg-white/90 text-xs rounded hover:bg-white transition-colors"
           >
-            ✏️ Legenda
+            <Icon.Pencil className="w-3.5 h-3.5 inline" /> Legenda
           </button>
 
           <button
             onClick={onDelete}
             className="w-full px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition-colors"
           >
-            🗑️ Eliminar
+            <Icon.Trash className="w-3.5 h-3.5 inline" /> Eliminar
           </button>
         </div>
       )}

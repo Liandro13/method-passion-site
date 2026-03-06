@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import type { Booking, CalendarEvent } from '@method-passion/shared';
-import { STATUS_COLORS, formatDate } from '@method-passion/shared';
+import { STATUS_COLORS, formatDate, Icon } from '@method-passion/shared';
 import TeamBookingDetailModal from './TeamBookingDetailModal';
 import StatusBadge from './ui/StatusBadge';
 import { useBookings } from '../hooks/useBookings';
@@ -56,7 +56,7 @@ export default function TeamAccommodationPanel({ accommodationId, accommodationN
     blockedDates.forEach(blocked => {
       calendarEvents.push({
         id: `blocked-${blocked.id}`,
-        title: `🚫 ${blocked.reason || 'Bloqueado'}`,
+        title: `${blocked.reason || 'Bloqueado'}`,
         start: blocked.start_date,
         // Add +1 day so last blocked day is visually included
         end: addDays(blocked.end_date, 1),
@@ -144,7 +144,7 @@ export default function TeamAccommodationPanel({ accommodationId, accommodationN
               activeTab === 'calendar' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            📅 Calendário
+            <Icon.Calendar className="w-4 h-4 inline" /> Calendário
           </button>
           <button
             onClick={() => setActiveTab('list')}
@@ -152,7 +152,7 @@ export default function TeamAccommodationPanel({ accommodationId, accommodationN
               activeTab === 'list' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            📋 Lista
+            <Icon.List className="w-4 h-4 inline" /> Lista
           </button>
         </div>
       </div>
@@ -189,7 +189,7 @@ export default function TeamAccommodationPanel({ accommodationId, accommodationN
             <div className="flex flex-col sm:flex-row gap-3">
               <input
                 type="text"
-                placeholder="🔍 Pesquisar por nome..."
+                placeholder="Pesquisar por nome..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="input-field flex-1"
@@ -265,7 +265,7 @@ export default function TeamAccommodationPanel({ accommodationId, accommodationN
                           className="p-1.5 text-primary hover:bg-blue-50 rounded"
                           title="Ver detalhes"
                         >
-                          👁️
+                          <Icon.Eye className="w-4 h-4" />
                         </button>
                       </td>
                     </tr>

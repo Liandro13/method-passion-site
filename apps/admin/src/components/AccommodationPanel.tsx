@@ -4,7 +4,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { createBooking, updateBooking, deleteBooking, createBlockedDate, deleteBlockedDate } from '../lib/api';
 import type { Booking, CalendarEvent } from '@method-passion/shared';
-import { STATUS_OPTIONS, PLATFORM_OPTIONS, STATUS_COLORS, formatDate } from '@method-passion/shared';
+import { STATUS_OPTIONS, PLATFORM_OPTIONS, STATUS_COLORS, formatDate, Icon } from '@method-passion/shared';
 import BookingModal from './BookingModal';
 import BlockedDateModal from './BlockedDateModal';
 import StatusBadge from './ui/StatusBadge';
@@ -52,8 +52,8 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
 
     bookings.forEach(booking => {
       const colors = STATUS_COLORS[booking.status] || STATUS_COLORS.pending;
-      const statusLabel = booking.status === 'pending' ? ' ⏳' : 
-                          booking.status === 'cancelled' ? ' ❌' : '';
+      const statusLabel = booking.status === 'pending' ? ' (pendente)' : 
+                          booking.status === 'cancelled' ? ' (cancelado)' : '';
 
       calendarEvents.push({
         id: `booking-${booking.id}`,
@@ -74,7 +74,7 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
     blockedDates.forEach(blocked => {
       calendarEvents.push({
         id: `blocked-${blocked.id}`,
-        title: `🚫 ${blocked.reason || 'Bloqueado'}`,
+        title: `${blocked.reason || 'Bloqueado'}`,
         start: blocked.start_date,
         // Add +1 day so last blocked day is visually included
         end: addDays(blocked.end_date, 1),
@@ -254,7 +254,7 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
               activeTab === 'calendar' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            📅 Calendário
+            <Icon.Calendar className="w-4 h-4 inline" /> Calendário
           </button>
           <button
             onClick={() => setActiveTab('list')}
@@ -262,7 +262,7 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
               activeTab === 'list' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            📋 Lista {pendingCount > 0 && <span className="ml-1 px-1.5 py-0.5 bg-yellow-500 text-white text-xs rounded-full">{pendingCount}</span>}
+            <Icon.List className="w-4 h-4 inline" /> Lista {pendingCount > 0 && <span className="ml-1 px-1.5 py-0.5 bg-yellow-500 text-white text-xs rounded-full">{pendingCount}</span>}
           </button>
         </div>
       </div>
@@ -303,7 +303,7 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
               <input
                 type="text"
-                placeholder="🔍 Pesquisar..."
+                placeholder="Pesquisar..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="input-field"
@@ -316,9 +316,9 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
               </select>
               <div className="flex gap-2">
                 {hasActiveFilters && (
-                  <button onClick={clearFilters} className="px-3 py-2 text-sm text-gray-600 hover:text-dark">✕ Limpar</button>
+                  <button onClick={clearFilters} className="px-3 py-2 text-sm text-gray-600 hover:text-dark flex items-center gap-1"><Icon.XMark className="w-3.5 h-3.5" /> Limpar</button>
                 )}
-                <button onClick={exportToCSV} className="btn-secondary text-sm flex-1">📥 CSV</button>
+                <button onClick={exportToCSV} className="btn-secondary text-sm flex-1 flex items-center justify-center gap-1"><Icon.Download className="w-3.5 h-3.5" /> CSV</button>
               </div>
             </div>
             <div className="flex gap-2 mt-3 items-center">
@@ -366,15 +366,15 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
                           {booking.status === 'pending' && (
                             <>
                               <button onClick={() => handleQuickApprove(booking)} disabled={updatingId === booking.id} className="p-1.5 text-green-600 hover:bg-green-50 rounded" title="Aprovar">
-                                {updatingId === booking.id ? '...' : '✓'}
+                                {updatingId === booking.id ? '...' : <Icon.Check className="w-4 h-4" />}
                               </button>
                               <button onClick={() => handleQuickReject(booking)} disabled={updatingId === booking.id} className="p-1.5 text-red-600 hover:bg-red-50 rounded" title="Rejeitar">
-                                {updatingId === booking.id ? '...' : '✗'}
+                                {updatingId === booking.id ? '...' : <Icon.XMark className="w-4 h-4" />}
                               </button>
                             </>
                           )}
-                          <button onClick={() => { setEditingBooking(booking); setShowBookingModal(true); }} className="p-1.5 text-primary hover:bg-blue-50 rounded" title="Editar">✏️</button>
-                          <button onClick={() => handleDeleteBooking(booking.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded" title="Eliminar">🗑️</button>
+                          <button onClick={() => { setEditingBooking(booking); setShowBookingModal(true); }} className="p-1.5 text-primary hover:bg-blue-50 rounded" title="Editar"><Icon.Pencil className="w-4 h-4" /></button>
+                          <button onClick={() => handleDeleteBooking(booking.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded" title="Eliminar"><Icon.Trash className="w-4 h-4" /></button>
                         </div>
                       </td>
                     </tr>
@@ -408,11 +408,11 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
                   <div className="flex gap-2 pt-3 border-t">
                     {booking.status === 'pending' && (
                       <>
-                        <button onClick={() => handleQuickApprove(booking)} disabled={updatingId === booking.id} className="flex-1 py-2 bg-green-600 text-white text-sm rounded-lg">{updatingId === booking.id ? '...' : '✓ Aprovar'}</button>
-                        <button onClick={() => handleQuickReject(booking)} disabled={updatingId === booking.id} className="flex-1 py-2 bg-red-600 text-white text-sm rounded-lg">{updatingId === booking.id ? '...' : '✗ Rejeitar'}</button>
+                        <button onClick={() => handleQuickApprove(booking)} disabled={updatingId === booking.id} className="flex-1 py-2 bg-green-600 text-white text-sm rounded-lg flex items-center justify-center gap-1">{updatingId === booking.id ? '...' : <><Icon.Check className="w-4 h-4" /> Aprovar</>}</button>
+                        <button onClick={() => handleQuickReject(booking)} disabled={updatingId === booking.id} className="flex-1 py-2 bg-red-600 text-white text-sm rounded-lg flex items-center justify-center gap-1">{updatingId === booking.id ? '...' : <><Icon.XMark className="w-4 h-4" /> Rejeitar</>}</button>
                       </>
                     )}
-                    <button onClick={() => { setEditingBooking(booking); setShowBookingModal(true); }} className="flex-1 py-2 bg-primary text-white text-sm rounded-lg">✏️ Editar</button>
+                    <button onClick={() => { setEditingBooking(booking); setShowBookingModal(true); }} className="flex-1 py-2 bg-primary text-white text-sm rounded-lg flex items-center justify-center gap-1"><Icon.Pencil className="w-4 h-4" /> Editar</button>
                   </div>
                 </div>
               ))

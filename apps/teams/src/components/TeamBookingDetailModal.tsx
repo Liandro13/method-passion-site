@@ -1,5 +1,5 @@
 import type { Booking } from '@method-passion/shared';
-import { formatDate } from '@method-passion/shared';
+import { formatDate, Icon } from '@method-passion/shared';
 
 interface TeamBookingDetailModalProps {
   booking: Booking;
@@ -22,7 +22,7 @@ export default function TeamBookingDetailModal({ booking, onClose }: TeamBooking
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            ✕
+            <Icon.XMark className="w-5 h-5" />
           </button>
         </div>
 

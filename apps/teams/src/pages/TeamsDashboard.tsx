@@ -5,7 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import { getBookings } from '../hooks/useBookings';
 import TeamAccommodationPanel from '../components/TeamAccommodationPanel';
 import TeamBookingsListView from '../components/TeamBookingsListView';
-import { ACCOMMODATIONS } from '@method-passion/shared';
+import { ACCOMMODATIONS, Icon } from '@method-passion/shared';
 
 type ViewType = 'accommodation' | 'all-bookings';
 
@@ -97,7 +97,7 @@ export default function TeamsDashboard() {
 
         <div className="flex-1 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-lg p-8 text-center max-w-md">
-            <div className="text-6xl mb-4">🔒</div>
+            <div className="text-6xl mb-4"><Icon.Lock className="w-16 h-16 mx-auto text-gray-300" /></div>
             <h2 className="text-xl font-semibold text-dark mb-2">Sem Acesso a Alojamentos</h2>
             <p className="text-gray-600">
               Não tens alojamentos atribuídos à tua conta. 
@@ -166,7 +166,7 @@ export default function TeamsDashboard() {
                     : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
-                <span>🏠</span>
+                <span><Icon.Home className="w-5 h-5" /></span>
                 <span className="font-medium text-sm">{acc.shortName}</span>
               </button>
             ))}
@@ -185,7 +185,7 @@ export default function TeamsDashboard() {
                   : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
-              <span>📋</span>
+              <span><Icon.List className="w-5 h-5" /></span>
               <span className="font-medium text-sm">Todas Reservas</span>
             </button>
           </nav>
@@ -205,7 +205,7 @@ export default function TeamsDashboard() {
                   onClick={() => setSidebarOpen(false)}
                   className="p-2 hover:bg-gray-100 rounded-lg"
                 >
-                  ✕
+                  <Icon.XMark className="w-5 h-5" />
                 </button>
               </div>
               <nav className="p-4 space-y-1">
@@ -227,7 +227,7 @@ export default function TeamsDashboard() {
                         : 'text-gray-600 hover:bg-gray-100'
                     }`}
                   >
-                    <span>🏠</span>
+                    <span><Icon.Home className="w-5 h-5" /></span>
                     <span className="font-medium">{acc.shortName}</span>
                   </button>
                 ))}
@@ -249,7 +249,7 @@ export default function TeamsDashboard() {
                       : 'text-gray-600 hover:bg-gray-100'
                   }`}
                 >
-                  <span>📋</span>
+                  <span><Icon.List className="w-5 h-5" /></span>
                   <span className="font-medium">Todas Reservas</span>
                 </button>
               </nav>
@@ -302,7 +302,7 @@ export default function TeamsDashboard() {
                   : 'text-gray-500'
               }`}
             >
-              <span className="text-lg">🏠</span>
+              <span className="text-lg flex items-center justify-center"><Icon.Home className="w-5 h-5" /></span>
               <span className="text-[10px] mt-0.5">{acc.shortName}</span>
             </button>
           ))}
@@ -312,7 +312,7 @@ export default function TeamsDashboard() {
               activeView === 'all-bookings' ? 'text-primary' : 'text-gray-500'
             }`}
           >
-            <span className="text-lg">📋</span>
+            <span className="text-lg flex items-center justify-center"><Icon.List className="w-5 h-5" /></span>
             <span className="text-[10px] mt-0.5">Todas</span>
           </button>
         </div>

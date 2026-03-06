@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import type { Booking } from '@method-passion/shared';
-import { ACCOMMODATIONS } from '@method-passion/shared';
+import { ACCOMMODATIONS, Icon } from '@method-passion/shared';
 import { checkAvailability as checkAvailabilityApi, getBookedDatesForCalendar } from '../lib/api';
 
 interface BookingModalProps {
@@ -256,13 +256,13 @@ export default function BookingModal({ booking, defaultDates, accommodationId, s
           {/* Availability warning */}
           {isCheckingAvailability && checkIn && checkOut && (
             <div className="bg-gray-50 border border-gray-200 text-gray-600 px-3 py-2 rounded-lg text-sm flex items-center gap-2">
-              <span className="animate-spin">⏳</span> A verificar disponibilidade...
+              <span className="animate-spin"><Icon.Loader className="w-4 h-4" /></span> A verificar disponibilidade...
             </div>
           )}
           
           {!isCheckingAvailability && !availability.available && checkIn && checkOut && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start gap-2">
-              <span className="text-lg">⚠️</span>
+              <span className="text-lg"><Icon.Warning className="w-5 h-5" /></span>
               <div>
                 <div className="font-medium">Datas indisponíveis</div>
                 <div className="text-sm">{availability.message}</div>
@@ -278,7 +278,7 @@ export default function BookingModal({ booking, defaultDates, accommodationId, s
           
           {!isCheckingAvailability && availability.available && checkIn && checkOut && (
             <div className="bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded-lg text-sm flex items-center gap-2">
-              <span>✓</span> Datas disponíveis
+              <span><Icon.Check className="w-4 h-4" /></span> Datas disponíveis
             </div>
           )}
 
@@ -359,9 +359,9 @@ export default function BookingModal({ booking, defaultDates, accommodationId, s
               onChange={(e) => setStatus(e.target.value as 'pending' | 'confirmed' | 'cancelled')}
               className="input-field"
             >
-              <option value="pending">🟡 Pendente</option>
-              <option value="confirmed">🟢 Confirmado</option>
-              <option value="cancelled">⚫ Cancelado</option>
+              <option value="pending">Pendente</option>
+              <option value="confirmed">Confirmado</option>
+              <option value="cancelled">Cancelado</option>
             </select>
           </div>
 
