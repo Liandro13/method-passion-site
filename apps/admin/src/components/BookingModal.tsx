@@ -62,9 +62,10 @@ export default function BookingModal({ booking, defaultDates, accommodationId, s
 
   // Load blocked dates when accommodation changes
   // Hotel-style: check-in at 15h, check-out at 12h — same-day turnover is allowed
+  // When editing, exclude the current booking's own dates so they remain selectable
   useEffect(() => {
     setLoadingDates(true);
-    getBookedDatesForCalendar(selectedAccommodation).then(bookedDates => {
+    getBookedDatesForCalendar(selectedAccommodation, booking?.id).then(bookedDates => {
       const ciDates: Date[] = [];
       const coDates: Date[] = [];
       for (const range of bookedDates) {
@@ -92,7 +93,7 @@ export default function BookingModal({ booking, defaultDates, accommodationId, s
       setExcludedCheckOutDates(coDates);
       setLoadingDates(false);
     }).catch(() => setLoadingDates(false));
-  }, [selectedAccommodation]);
+  }, [selectedAccommodation, booking?.id]);
 
   // Check availability via API when dates or accommodation change
   const doCheckAvailability = useCallback(async () => {

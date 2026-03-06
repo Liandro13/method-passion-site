@@ -294,14 +294,15 @@ export async function checkAvailability(params: {
 }
 
 // Get all booked/blocked dates for calendar display
-export async function getBookedDatesForCalendar(accommodationId: number): Promise<{ checkIn: string; checkOut: string }[]> {
+export async function getBookedDatesForCalendar(accommodationId: number, excludeBookingId?: number): Promise<{ checkIn: string; checkOut: string }[]> {
   const response = await fetch(`${API_BASE}/check-availability`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       accommodation: accommodationId,
       checkIn: '',
-      checkOut: ''
+      checkOut: '',
+      excludeBookingId
     })
   });
   const result = await response.json();

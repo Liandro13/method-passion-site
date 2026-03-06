@@ -684,13 +684,19 @@ app.post('/check-availability', async (c) => {
   if (!checkIn || !checkOut) {
     // Get all future bookings (for calendar display)
     const today = new Date().toISOString().split('T')[0]
-    const { results: allBookings } = await c.env.DB.prepare(`
+    let calendarQuery = `
       SELECT check_in, check_out FROM bookings 
       WHERE accommodation_id = ? 
       AND status != 'cancelled'
       AND check_out >= ?
-      ORDER BY check_in
-    `).bind(accId, today).all() as { results: Array<{ check_in: string; check_out: string }> }
+    `
+    const calendarParams: any[] = [accId, today]
+    if (excludeBookingId) {
+      calendarQuery += ' AND id != ?'
+      calendarParams.push(excludeBookingId)
+    }
+    calendarQuery += ' ORDER BY check_in'
+    const { results: allBookings } = await c.env.DB.prepare(calendarQuery).bind(...calendarParams).all() as { results: Array<{ check_in: string; check_out: string }> }
 
     // Get all future blocked dates
     const { results: allBlocked } = await c.env.DB.prepare(`
