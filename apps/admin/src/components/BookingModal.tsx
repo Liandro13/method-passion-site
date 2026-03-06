@@ -56,24 +56,40 @@ export default function BookingModal({ booking, defaultDates, accommodationId, s
   const [availabilityError, setAvailabilityError] = useState<string | null>(null);
   const [availability, setAvailability] = useState<{ available: boolean; message: string | null }>({ available: true, message: null });
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
-  const [excludedDates, setExcludedDates] = useState<Date[]>([]);
+  const [excludedCheckInDates, setExcludedCheckInDates] = useState<Date[]>([]);
+  const [excludedCheckOutDates, setExcludedCheckOutDates] = useState<Date[]>([]);
   const [loadingDates, setLoadingDates] = useState(true);
 
   // Load blocked dates when accommodation changes
+  // Hotel-style: check-in at 15h, check-out at 12h — same-day turnover is allowed
   useEffect(() => {
     setLoadingDates(true);
     getBookedDatesForCalendar(selectedAccommodation).then(bookedDates => {
-      const dates: Date[] = [];
+      const ciDates: Date[] = [];
+      const coDates: Date[] = [];
       for (const range of bookedDates) {
         const start = new Date(range.checkIn);
         const end = new Date(range.checkOut);
-        const current = new Date(start);
-        while (current < end) {
-          dates.push(new Date(current));
-          current.setDate(current.getDate() + 1);
+
+        // Check-in exclusions: check_in .. check_out-1
+        // (check_out day is free for new arrivals — previous guest leaves at 12h)
+        const ci = new Date(start);
+        while (ci < end) {
+          ciDates.push(new Date(ci));
+          ci.setDate(ci.getDate() + 1);
+        }
+
+        // Check-out exclusions: check_in+1 .. check_out
+        // (check_in day is free for departures — new guest arrives at 15h)
+        const co = new Date(start);
+        co.setDate(co.getDate() + 1);
+        while (co <= end) {
+          coDates.push(new Date(co));
+          co.setDate(co.getDate() + 1);
         }
       }
-      setExcludedDates(dates);
+      setExcludedCheckInDates(ciDates);
+      setExcludedCheckOutDates(coDates);
       setLoadingDates(false);
     }).catch(() => setLoadingDates(false));
   }, [selectedAccommodation]);
@@ -220,7 +236,7 @@ export default function BookingModal({ booking, defaultDates, accommodationId, s
                     setCheckIn('');
                   }
                 }}
-                excludeDates={excludedDates}
+                excludeDates={excludedCheckInDates}
                 minDate={new Date()}
                 dateFormat="dd/MM/yyyy"
                 placeholderText="Selecionar data"
@@ -239,7 +255,7 @@ export default function BookingModal({ booking, defaultDates, accommodationId, s
                     setCheckOut('');
                   }
                 }}
-                excludeDates={excludedDates}
+                excludeDates={excludedCheckOutDates}
                 minDate={checkIn ? new Date(new Date(checkIn).getTime() + 86400000) : new Date()}
                 dateFormat="dd/MM/yyyy"
                 placeholderText="Selecionar data"

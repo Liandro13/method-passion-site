@@ -301,6 +301,7 @@ export default function AccommodationPanel({ accommodationId, accommodationName,
               initialDate={currentDateRef.current}
               events={events}
               selectable={true}
+              selectOverlap={true}
               select={handleDateSelect}
               eventClick={handleEventClick}
               datesSet={(dateInfo) => {

@@ -40,26 +40,41 @@ export default function BookingForm({
   const [additionalNames, setAdditionalNames] = useState<string[]>([]);
   const [error, setError] = useState('');
   const [checking, setChecking] = useState(false);
-  const [excludedDates, setExcludedDates] = useState<Date[]>([]);
+  const [excludedCheckInDates, setExcludedCheckInDates] = useState<Date[]>([]);
+  const [excludedCheckOutDates, setExcludedCheckOutDates] = useState<Date[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Load blocked dates when accommodation changes
+  // Hotel-style: check-in at 15h, check-out at 12h — same-day turnover is allowed
   useEffect(() => {
     setLoading(true);
     checkAvailability(accommodation, '', '').then(result => {
       if (result.bookedDates) {
-        // Convert date ranges to individual excluded dates
-        const dates: Date[] = [];
+        const ciDates: Date[] = [];
+        const coDates: Date[] = [];
         for (const range of result.bookedDates) {
           const start = new Date(range.checkIn);
           const end = new Date(range.checkOut);
-          const current = new Date(start);
-          while (current < end) {
-            dates.push(new Date(current));
-            current.setDate(current.getDate() + 1);
+
+          // Check-in exclusions: check_in .. check_out-1
+          // (check_out day is free for new arrivals — previous guest leaves at 12h)
+          const ci = new Date(start);
+          while (ci < end) {
+            ciDates.push(new Date(ci));
+            ci.setDate(ci.getDate() + 1);
+          }
+
+          // Check-out exclusions: check_in+1 .. check_out
+          // (check_in day is free for departures — new guest arrives at 15h)
+          const co = new Date(start);
+          co.setDate(co.getDate() + 1);
+          while (co <= end) {
+            coDates.push(new Date(co));
+            co.setDate(co.getDate() + 1);
           }
         }
-        setExcludedDates(dates);
+        setExcludedCheckInDates(ciDates);
+        setExcludedCheckOutDates(coDates);
       }
       setLoading(false);
     }).catch(() => setLoading(false));
@@ -166,7 +181,7 @@ export default function BookingForm({
                   setCheckOutDate(null);
                 }
               }}
-              excludeDates={excludedDates}
+              excludeDates={excludedCheckInDates}
               minDate={new Date()}
               dateFormat="dd/MM/yyyy"
               locale={getLocale()}
@@ -183,7 +198,7 @@ export default function BookingForm({
             <DatePicker
               selected={checkOutDate}
               onChange={(date: Date | null) => setCheckOutDate(date)}
-              excludeDates={excludedDates}
+              excludeDates={excludedCheckOutDates}
               minDate={checkInDate || new Date()}
               dateFormat="dd/MM/yyyy"
               locale={getLocale()}
