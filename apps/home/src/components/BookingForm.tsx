@@ -216,15 +216,16 @@ export default function BookingForm({
             <label className="block text-sm font-medium text-dark mb-2">
               {t.guests} *
             </label>
-            <input
-              type="number"
+            <select
               value={guests}
-              min={1}
-              max={maxGuests}
-              onChange={(e) => setGuests(parseInt(e.target.value) || 1)}
+              onChange={(e) => setGuests(Number(e.target.value))}
               className="input-field"
               required
-            />
+            >
+              {Array.from({ length: maxGuests }, (_, i) => i + 1).map(n => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
           </div>
 
           <div>
