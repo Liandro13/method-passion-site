@@ -42,7 +42,7 @@ export default function Header({ language, onLanguageChange }: HeaderProps) {
               </h1>
               <p className={`text-sm text-white/70 transition-all duration-500 ${
                 scrolled ? 'opacity-0 h-0 mt-0' : 'opacity-100 h-auto mt-1'
-              }`}>Alojamento Local</p>
+              }`}>Gestão de Alojamentos Locais</p>
             </div>
           </div>
           

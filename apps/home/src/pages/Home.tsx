@@ -218,7 +218,7 @@ export default function Home() {
             <div className="animate-fade-in-down mb-6" style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass text-white/80 text-sm font-medium">
                 <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                Method & Passion — Alojamento Local
+                Method & Passion — Gestão de Alojamentos Locais
               </span>
             </div>
 
@@ -451,7 +451,7 @@ export default function Home() {
               </div>
               <p className="text-white/50 text-sm leading-relaxed">
                 {language === 'pt' 
-                  ? 'Alojamento local de excelência em Portugal. Onde o método encontra a paixão.' 
+                  ? 'Gestão de Alojamentos Locais de excelência em Portugal. Onde o método encontra a paixão.' 
                   : 'Excellent local accommodation in Portugal. Where method meets passion.'}
               </p>
             </div>

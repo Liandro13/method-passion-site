@@ -4,7 +4,7 @@ export const translations = {
   pt: {
     // Header
     title: 'Method & Passion',
-    subtitle: 'Alojamento Local',
+    subtitle: 'Gestão de Alojamentos Locais',
     
     // Accommodations
     selectAccommodation: 'Escolha o seu alojamento',
